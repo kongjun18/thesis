@@ -97,7 +97,7 @@ NUMA 架构下不仅 CPU 访问本地内存和远程内存延迟不同，而且�
 
 内存安全 bug 会对内核稳定性产生负面影响。[AOSP 安全性文档](https://source.android.google.cn/docs/security/memory-safety?hl=zh-cn)指出，内存安全 bug 和以原生编程语言处理内存时遇到的错误是 Android 代码库中最常见的问题。此类问题造成了超过 60% 的高严重程度安全漏洞，并造成了数百万次用户可见的崩溃。从第一个 Android 版本开始，内存安全 bug 就一直是 Android 安全漏洞的首要原因，约占 Android 安全漏洞的 51%。
 
-![Android 安全漏洞类型](./images/Android-security-report.png)
+![Android 安全漏洞类型](images/Android-security-report.png)
 
 随着代码的复杂性不断增长，如果一直坐视不管，内存安全 bug 的数量将随着时间的推移而持续增加。因此，现代操作系统必须提供检测并缓解此类 bug 的工具。
 
@@ -111,11 +111,11 @@ Linux 内核于 6.1 版本开始支持使用 Rust 语言编写驱动程序，试
 
 Linux 内核的三大类内存安全 bug 检测器总结如下：
 
-| Debugger   | Overhead      | OOB              | UAF                | invalid free       | double free        |
-| ---------- | ------------- | ---------------- | ------------------ | ------------------ | ------------------ |
-| slub_debug | 中等            | 对象被释放时           | 对象被重新分配时           | 立即                 | 立即                 |
-| kasan      | 非常高，不可用于生产环境。 | 立即               | 立即（对象被重新分配后不再检测）   | 立即                 | 立即                 |
-| kfence     | 低，可用于生产环境。    | 立即或当kfence对象被释放时 | 立即（仅适用于 kfence 对象） | 立即（仅适用于 kfence 对象） | 立即（仅适用于 kfence 对象） |
+| Debugger   | Overhead                   | OOB                          | UAF                              | invalid free                 | double free                  |
+| ---------- | -------------------------- | ---------------------------- | -------------------------------- | ---------------------------- | ---------------------------- |
+| slub_debug | 中等                       | 对象被释放时                 | 对象被重新分配时                 | 立即                         | 立即                         |
+| kasan      | 非常高，不可用于生产环境。 | 立即                         | 立即（对象被重新分配后不再检测） | 立即                         | 立即                         |
+| kfence     | 低，可用于生产环境。       | 立即或当 kfence 对象被释放时 | 立即（仅适用于 kfence 对象）     | 立即（仅适用于 kfence 对象） | 立即（仅适用于 kfence 对象） |
 
 ### 论文主要工作与组织结构
 
@@ -131,17 +131,17 @@ Linux 内核的三大类内存安全 bug 检测器总结如下：
 
 ## 内存模型
 
-*内存模型*（*memory model*）指操作系统对物理内存的管理方式和组织结构。
+_内存模型_（_memory model_）指操作系统对物理内存的管理方式和组织结构。
 
 Linux 内核的内存模型经历了三个阶段：平坦内存模型、非连续内存模型和稀疏内存模型。
 
 ### 平坦内存模型
 
-在大多数处理器架构中，物理内存仅仅是物理地址空间的一部分，物理地址空间通常是不连续的，其中不可用的部分称为*内存空洞*（*memory hole*）。内存空洞包括：架构保留的区域，内存映射 IO，ROM 等等。
+在大多数处理器架构中，物理内存仅仅是物理地址空间的一部分，物理地址空间通常是不连续的，其中不可用的部分称为*内存空洞*（_memory hole_）。内存空洞包括：架构保留的区域，内存映射 IO，ROM 等等。
 
 x86_64 典型的物理地址空间如下：
 
-![x86_64 物理地址空间](/home/kongjun/ownCloud/Obsidian/05-项目/paper/images/x86_64-physical-address-space.svg)
+![x86_64 物理地址空间](images/x86_64-physical-address-space.svg)
 
 x86_64 架构中，前 1MB 物理地址空间称为*实模式地址空间*，以实模式地址空间为例，说明物理地址空间的复杂性：
 
@@ -161,7 +161,7 @@ x86_64 架构中，前 1MB 物理地址空间称为*实模式地址空间*，以
 
 尽管物理地址空间如此复杂，但总体上内存仍然是连续的。平坦内存模型将物理地址空间视作由连续的物理页组成的数组，并使用数组`struct page mem_map[]`跟踪每一页的状态，包括是否已分配等等。
 
-![FLATMEM](/home/kongjun/ownCloud/Obsidian/05-项目/paper/images/FLATMEM.drawio.svg)
+![FLATMEM](images/FLATMEM.drawio.svg)
 
 平坦内存模型有以下优点：
 
@@ -181,7 +181,7 @@ x86_64 架构中，前 1MB 物理地址空间称为*实模式地址空间*，以
 
 在非连续内存模型中，内存被划分为多个节点，每个节点都有自己的`mem_map[]`数组，跟踪本节点内的物理页。
 
-![DISTCONFITMEM](/home/kongjun/ownCloud/Obsidian/05-项目/paper/images/DISTCONFIT.drawio.svg)
+![DISTCONFITMEM](images/DISTCONFIT.drawio.svg)
 
 尽管非连续内存模型是为了支持 NUMA 架构而发生的，但非连续物理内存模型是操作系统的软件视角，不一定准确反映硬件 NUMA 布局。例如，操作系统可以把任意一块连续内存视作一个节点，而不用考虑硬件上 NUMA 架构的真实布局。论文后续部分会详细介绍。
 
@@ -191,13 +191,13 @@ x86_64 架构中，前 1MB 物理地址空间称为*实模式地址空间*，以
 
 内存热插拔技术使得大范围的连续物理内存不再场景，稀疏的物理内存称为常态。非连续内存模型尽管使得 Linux 成功支持 NUMA 架构，但非连续内存模型实际上只是连续物理内存的变体，每个节点内部都是连续内存模型。内存热插拔场景下的物理内存过于稀疏，粗粒度的非连续内存模型无法支持如此稀疏的物理内存布局。
 
-因此，Linux 于 2005 年引入了原始的稀疏内存模型，称为 SPARSEMEM。SPARSEMEM 模型把粗粒度的节点，变成了更细粒度的`struct mem_section`。每个`mem_seciton`都有自己的内存管理结构`mem_map[]`，一个`mem_section`管理$2^{SECTION\_SIZE\_BIT}$字节物理内存，通常`SECTION_SIZE_BIT` 定义为 27，即一个`mem_section` 管理128MB内存。整个系统的内存管理结构被视作一个`mem_section`数组[^1]。
+因此，Linux 于 2005 年引入了原始的稀疏内存模型，称为 SPARSEMEM。SPARSEMEM 模型把粗粒度的节点，变成了更细粒度的`struct mem_section`。每个`mem_seciton`都有自己的内存管理结构`mem_map[]`，一个`mem_section`管理$2^{SECTION\_SIZE\_BIT}$字节物理内存，通常`SECTION_SIZE_BIT` 定义为 27，即一个`mem_section` 管理 128MB 内存。整个系统的内存管理结构被视作一个`mem_section`数组[^1]。
 
 将 FLATMEM 模型中 `struct page` 必须从物理地址开始到结束而连续存在，变成了 `struct mem_section` 必须连续存在。在内存空洞的场景下，只需要每 128 MB 的物理地址空间存在一个 `struct mem_section` 即可（不要求分配`struct page`结构），而无需为每 4 KB 的物理地址空间都分配一个 `struct page`，减少了不必要的内存开销。而且，`mem_section`有上线和下线两个状态，对应内存的插入与拔出，通过 `struct mem_section` 的动态初始化与销毁实现物理内存热插拔。
 
-![SPARSEMEM](/home/kongjun/ownCloud/Obsidian/05-项目/paper/images/SPARSEMEM.drawio.svg)
+![SPARSEMEM](images/SPARSEMEM.drawio.svg)
 
-[^1]: 实际上是一个 NR_SECTION_ROOTS * SECTION_PER_ROOT 大小的二维数组，因为SECTION_PER_ROOT 定义为 1，因此这里说是一维数组。
+[^1]: 实际上是一个 NR_SECTION_ROOTS \* SECTION_PER_ROOT 大小的二维数组，因为 SECTION_PER_ROOT 定义为 1，因此这里说是一维数组。
 
 经典 SPARSEMEM 模型有两大缺点：
 
@@ -205,29 +205,25 @@ x86_64 架构中，前 1MB 物理地址空间称为*实模式地址空间*，以
 
 2. 页帧编号和`struct page*`之间的转换开销比平坦内存模型大。
 
-这两个问题阻碍着 SPARSEMEM 完全替代 DISCONTIGMEM 内存模型，这两个问题已经分别通过 2005 年引入的 SPARSEMEM-EXTREME 拓展和 2007 年引入的SPARSEMEM-VMEMMAP 拓展解决了。
+这两个问题阻碍着 SPARSEMEM 完全替代 DISCONTIGMEM 内存模型，这两个问题已经分别通过 2005 年引入的 SPARSEMEM-EXTREME 拓展和 2007 年引入的 SPARSEMEM-VMEMMAP 拓展解决了。
 
 SPARSEMEM-EXTREME 将经典 SPARSEMEM 内存模型的`mem_section[NR_SECTION_ROOTS][1]`改成动态分配的`mem_section[NR_SECTION_ROOTS][SECTIONS_PER_ROOT]`，当某个`mem_seciton[SECTION_PER_ROOT]`对应的地址空间是内存空洞时，就不需要为其分配`struct mem_seciton`数组，从而减少了内存消耗。
 
-![SPARSEMEM-EXTREME](/home/kongjun/ownCloud/Obsidian/05-项目/paper/images/SPARSEMEM-EXTREME.drawio.svg)
-
-
+![SPARSEMEM-EXTREME](images/SPARSEMEM-EXTREME.drawio.svg)
 
 SPARSEMEM-VMEMMAP 拓展的思路是：在 SPARSEMEM 中，`struct page` 为应对内存空洞，实际上不会连续存在，但可以设法安排每个 `struct page`（不管其存在与否）的虚拟地址是固定且连续的，因为分配虚拟地址并不会有实际的开销，反而可以方便进行索引。SPARSEMEM-VMEMMAP 内存模型可以如同平坦内存模型一样快速进行页帧编号和`struct page*`的切换，使得稀疏内存模型可以完全替代平坦内存模型和非连续内存模型。
 
 2021 年提交补丁[Remove DISCINTIGMEM memory model](https://lwn.net/Articles/858333) 彻底移除了 DISCONFITMEM 内存模型，SPARSEMEM 内存模型成为 Linux 内核的默认内存模型。
 
-
-
 ### 本论文使用的内存模型及其实现
 
 教学操作系统没有对内存热插拔的需求，非连续内存模型支持 NUMA 架构，并且复杂度适中，因此论文描述的系统实现了非连续内存模型。
 
-![lzuos-memory-model](/home/kongjun/ownCloud/Obsidian/05-项目/paper/images/lzuos-memory-model.drawio.svg)
+![lzuos-memory-model](images/lzuos-memory-model.drawio.svg)
 
 目前本论文描述的操作系统是还不支持对称多处理器，因此将系统视为只有一个节点和一个 CPU 的 NUMA 架构机器，该节点并不包含整个物理地址空间，仅仅包含系统中的物理内存。节点内的物理内存被进一步划分为多个区域`struct zone`，每个区域都有自己独立的内存管理结构`struct page*mem_map`。上图展示了本论文实现的内存模型的逻辑结构。在实际的实现中，节点存储了整个节点内存区域的`struct page mem_map[]`，每个`zone`中的`struct page mem_map[]`只是指向节点的`mem_map[]`中对应区域的`struct page*`指针。物理结构如下图所示。
 
-![lzuos-memory-model-implementation](/home/kongjun/ownCloud/Obsidian/05-项目/paper/images/lzuos-memory-model-implementation.drawio.svg)
+![lzuos-memory-model-implementation](images/lzuos-memory-model-implementation.drawio.svg)
 
 划分`zone`的依据是系统中不同区域的物理内存特性不同。例如，x86_64 架构中只有低 32MB 的物理内存能够用于 DMA，因此用于 DMA 的内存必须从该`zone`分配；在内存热插拔场景下，内核的代码数据要放在不会被下线（拔出）的内存区域中，而某些用户数据可以放在可能被下线的内存区域中，因此还应该将可能下线的内存区域划分为一个`zone`。本论文的实现基于 RISCV 架构，并且运行在 qemu 模拟器中，通过 virtio 协议操作外设，DMA 不对物理地址做限制，但仍然区分了常规内存分配请求和用于 DMA 的内存分配请求，将节点的内存划分为`ZONE_DMA`和`ZONE_NORMAL`区域，也许网络协议栈和驱动程序会有这方面的需求。
 
