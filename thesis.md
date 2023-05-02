@@ -6,8 +6,9 @@
 - [ ] 添加 Linux 内存模型发展图
 - [ ] 添加二叉树图片来源 https://coolshell.cn/articles/10427.html
 - [ ] 也许 buddy system 一节可以增加空闲链表的图示
-- [ ] 添加内存模型实现的node、zone和ZONE_TYPE 说明
+- [ ] 添加内存模型实现的 node、zone 和 ZONE_TYPE 说明
 - [ ] 内存模型添加 NUMA mem policy 介绍
+- [ ] 内存模型添加平坦内存模型 page_to_pfn 快的意义
 
 ## 绪论
 
@@ -115,11 +116,11 @@ Linux 内核于 6.1 版本开始支持使用 Rust 语言编写驱动程序，试
 
 Linux 内核的三大类内存安全 bug 检测器总结如下：
 
-| Debugger   | Overhead      | OOB                | UAF                | invalid free       | double free        |
-| ---------- | ------------- | ------------------ | ------------------ | ------------------ | ------------------ |
-| slub_debug | 中等            | 对象被释放时             | 对象被重新分配时           | 立即                 | 立即                 |
-| kasan      | 非常高，不可用于生产环境。 | 立即                 | 立即（对象被重新分配后不再检测）   | 立即                 | 立即                 |
-| kfence     | 低，可用于生产环境。    | 立即或当 kfence 对象被释放时 | 立即（仅适用于 kfence 对象） | 立即（仅适用于 kfence 对象） | 立即（仅适用于 kfence 对象） |
+| Debugger   | Overhead                   | OOB                          | UAF                              | invalid free                 | double free                  |
+| ---------- | -------------------------- | ---------------------------- | -------------------------------- | ---------------------------- | ---------------------------- |
+| slub_debug | 中等                       | 对象被释放时                 | 对象被重新分配时                 | 立即                         | 立即                         |
+| kasan      | 非常高，不可用于生产环境。 | 立即                         | 立即（对象被重新分配后不再检测） | 立即                         | 立即                         |
+| kfence     | 低，可用于生产环境。       | 立即或当 kfence 对象被释放时 | 立即（仅适用于 kfence 对象）     | 立即（仅适用于 kfence 对象） | 立即（仅适用于 kfence 对象） |
 
 ### 论文主要工作与组织结构
 
@@ -233,7 +234,7 @@ SPARSEMEM-VMEMMAP 拓展的思路是：在 SPARSEMEM 中，`struct page` 为应�
 
 ## 页分配器
 
-*页分配器*（*page allocator*）指按页管理系统内存的分配与回收的内存分配器，是操作系统最基础的组件。本论文的页分配器使用的主要算法是*伙伴系统*（Binary Buddy Allocator），该算法由 Knowlton [Kno65] 设计并由 Knuth [Knu68] 进一步描述。与其他内存分配算法相比，伙伴系统有以下优点：
+_页分配器_（_page allocator_）指按页管理系统内存的分配与回收的内存分配器，是操作系统最基础的组件。本论文的页分配器使用的主要算法是*伙伴系统*（Binary Buddy Allocator），该算法由 Knowlton [Kno65] 设计并由 Knuth [Knu68] 进一步描述。与其他内存分配算法相比，伙伴系统有以下优点：
 
 - 算法简单：伙伴系统算法相对简单，易于实现。该算法不需要维护大量的元数据信息，所以比其他算法更加轻量化和高效。
 
@@ -241,89 +242,89 @@ SPARSEMEM-VMEMMAP 拓展的思路是：在 SPARSEMEM 中，`struct page` 为应�
 
 - 在理想负载下没有内碎片：伙伴系统将内存划分为一系列大小相等的块，并且仅能分配$2^N$页，对于$2^N$页的内存分配请求不存在内存碎片的问题。
 
-伙伴系统一种将普通的二次幂分配器与空闲缓冲区合并 [Vah96] 相结合的分配方案，其背后的基本概念非常简单。 内存被划分成内存块，每个内存块由$2^N$个连续的物理页组成，其中`N` 称为该内存块的*阶数*（*order*）。分配时如果没有所需大小的内存块，则将一个更大的内存块平分成两半，平分出来的内存块彼此互为伙伴。其中一个用于分配，另一半空闲。内存块会根据需要连续平分，直到平分出所需大小的内存块。 稍后释放一个内存块时，将检查它的伙伴的分配状态，如果它是空闲的，则将两者合并。合并得到新的空闲内存块后，再去检测它的伙伴，继续上述合并过程，知道无法合并。
+伙伴系统一种将普通的二次幂分配器与空闲缓冲区合并 [Vah96] 相结合的分配方案，其背后的基本概念非常简单。 内存被划分成内存块，每个内存块由$2^N$个连续的物理页组成，其中`N` 称为该内存块的*阶数*（_order_）。分配时如果没有所需大小的内存块，则将一个更大的内存块平分成两半，平分出来的内存块彼此互为伙伴。其中一个用于分配，另一半空闲。内存块会根据需要连续平分，直到平分出所需大小的内存块。 稍后释放一个内存块时，将检查它的伙伴的分配状态，如果它是空闲的，则将两者合并。合并得到新的空闲内存块后，再去检测它的伙伴，继续上述合并过程，知道无法合并。
 
 伙伴系统有多种实现方式，如基于二叉树的实现通过一个数组形式的完全二叉树管理内存，二叉树的节点标记相应内存块的使用状态，高层节点对应阶数大的块，低层节点对应阶数小的块，在分配和释放中通过这些节点的标记属性来进行块的分离合并。
 
-![buddy-system-binary-tree-implementation](/home/kongjun/ownCloud/Obsidian/05-项目/paper/images/buddy-system-binary-tree-implementation.jpg)
+![buddy-system-binary-tree-implementation](images/buddy-system-binary-tree-implementation.jpg)
 
 ### 物理页管理
 
 本系统为每个节点中的页帧都保留一个对应的`struct page`结构体，该结构体定义如下。
 
-| 成员名称    | 数据类型                    | 描述       |
-|:-------:|:-----------------------:| -------- |
-| flags   | uint32_t                | 物理页状态    |
-| count   | int32_t                 | 物理页使用者数量 |
-| private | uint64_t                | 存储私有数据   |
-| lru     | struct linked_list_node | 链表节点     |
+| 成员名称 |        数据类型         | 描述             |
+| :------: | :---------------------: | ---------------- |
+|  flags   |        uint32_t         | 物理页状态       |
+|  count   |         int32_t         | 物理页使用者数量 |
+| private  |        uint64_t         | 存储私有数据     |
+|   lru    | struct linked_list_node | 链表节点         |
 
 系统要为每个跟踪的物理页保留一个`struct page`结构体，因此`struct page`的大小必须要足够小，以便保留足够多的可用内存。因此`struct page`是整个系统中最为复杂的结构体，其复杂性在于每个`struct page`的字段都是精心编码的，在不同的场景下有不同的含义。
 
 `flags`保存物理页状态，包括物理页是否是被保留的（不可用于分配）、是否用于 slab 分配器、是否空闲等等。此外，`flags`的高 6 个字节还存储该页所属的`node` id 和`zone` id，因此只有 26 比特用于跟踪页面状态。
 
-![page-flags](/home/kongjun/ownCloud/Obsidian/05-项目/paper/images/page-flags.svg)
+![page-flags](images/page-flags.svg)
 
-其余字段根据`flags`标示的状态有不同的含义。`private`状态存储页面相关的私有数据，目前仅用于页面被伙伴系统管理时标示内存块的阶数。`lru`是 *Last Recently Used* 的简称，是一个链表节点，可用于页面置换；当页面空闲且被伙伴系统管理时，它用于标示下一块空闲内存块；当页面被分配给 slab 分配器时，`lru`用于记录该页面所属的 slab 和 cache。
+其余字段根据`flags`标示的状态有不同的含义。`private`状态存储页面相关的私有数据，目前仅用于页面被伙伴系统管理时标示内存块的阶数。`lru`是 _Last Recently Used_ 的简称，是一个链表节点，可用于页面置换；当页面空闲且被伙伴系统管理时，它用于标示下一块空闲内存块；当页面被分配给 slab 分配器时，`lru`用于记录该页面所属的 slab 和 cache。
 
 本系统通过分离链表实现伙伴系统。如图所示，维护一个指向不同阶数的空闲内存块链表的数组`struct free_area free_zreas[MAX_GFP_ORDER+1]`。 数组的第 0 个元素指向一个阶数为 0 的空闲内存块链表，第 N 个元素指向阶数为 N 的空闲内存块链表，`MAX_GFP_ORDER`是伙伴系统支持的最大阶数。每个`zone` 独立管理自己的内存，因此每个`zone`有自己独立的伙伴系统。wei wei
 
-![free-area](/home/kongjun/ownCloud/Obsidian/05-项目/paper/images/free-area.drawio.svg)
+![free-area](images/free-area.drawio.svg)
 
 `struct free_area`字段如下：
 
-| 字段名称      | 数据类型                    | 描述           |
-|:---------:|:-----------------------:|:------------:|
-| free_list | struct linked_list_node | 空闲链表头指针      |
-| nr_free   | int32_t                 | 空闲链表包含的空闲块数量 |
+| 字段名称  |        数据类型         |           描述           |
+| :-------: | :---------------------: | :----------------------: |
+| free_list | struct linked_list_node |      空闲链表头指针      |
+|  nr_free  |         int32_t         | 空闲链表包含的空闲块数量 |
 
-空闲块的第一页称为*首页*（*first page*），其余页面均称为*尾页*（*tail page*），首页的`struct page`代表整个空闲块的状态，`free_list`空闲链表指向第一个空闲块首页的`lru`链表节点，空闲块通过首页`struct page`的`lru`链表节点链接起来。
+空闲块的第一页称为*首页*（_first page_），其余页面均称为*尾页*（_tail page_），首页的`struct page`代表整个空闲块的状态，`free_list`空闲链表指向第一个空闲块首页的`lru`链表节点，空闲块通过首页`struct page`的`lru`链表节点链接起来。
 
 ### 接口设计
 
 伙伴系统提供的 API 如下：
 
-| 函数声明                                                                           | 介绍                        |
-|:------------------------------------------------------------------------------:|:-------------------------:|
-| struct page *alloc_pages_node(struct node *node, uint32_t order, gfp_t flags); | 从节点`node`分配`order`阶内存块    |
-| struct page *alloc_pages(uint32_t order, gfp_t flags);                         | 从当前 CPU 所属节点分配`order`阶内存块 |
-| struct page *alloc_page(gfp_t flags);                                          | 从当前 CPU 所属节点分配一页内存        |
-| void free_pages(struct page *page, uint32_t order);                            | 回收首页为`page`的`order`阶内存块   |
-| void free_pages(struct page *page);                                            | 回收物理页`page`               |
+|                                    函数声明                                    |                  介绍                  |
+| :----------------------------------------------------------------------------: | :------------------------------------: |
+| struct page *alloc_pages_node(struct node *node, uint32_t order, gfp_t flags); |    从节点`node`分配`order`阶内存块     |
+|            struct page \*alloc_pages(uint32_t order, gfp_t flags);             | 从当前 CPU 所属节点分配`order`阶内存块 |
+|                     struct page \*alloc_page(gfp_t flags);                     |    从当前 CPU 所属节点分配一页内存     |
+|              void free_pages(struct page \*page, uint32_t order);              |   回收首页为`page`的`order`阶内存块    |
+|                      void free_pages(struct page \*page);                      |            回收物理页`page`            |
 
 其中`gfp_t`标志决定页分配器如何分配内存。`gfp_t`标志可以分为以下三大类：
 
 - 调整行为：系统内存不足时，请求内存分配的进程可以休眠，等获取了内存的进程释放内存后再重试。但在中断处理例程中，进程不得休眠，否则迟迟不结束的中断处理例程会导致这期间的所有同类型中断丢失，严重影响系统吞吐量。
 
-| gfp_t 标志      | 介绍           |
-|:-------------:|:------------:|
-| __GFP_WAIT    | 允许内存分配导致进程休眠 |
-| __GFP_NORETRY | 内存分配失败后不再重试  |
-| __GFP_NOFAIL  | 内存分配失败后无限重试  |
+|   gfp_t 标志    |           介绍           |
+| :-------------: | :----------------------: |
+|  \_\_GFP_WAIT   | 允许内存分配导致进程休眠 |
+| \_\_GFP_NORETRY |  内存分配失败后不再重试  |
+| \_\_GFP_NOFAIL  |  内存分配失败后无限重试  |
 
 - 调整内存分配区域：内存被划分为多个`node`节点，`node`节点的内存又被划分为多个`zone`，用户可以要求页分配器从特定类型的`zone`分配内存。
 
-| gfp_t 标志     | 介绍                  |
-|:------------:|:-------------------:|
-| __GFP_NORMAL | 从 ZONE_NORMAL 区分配内存 |
-| __GFP_DMA    | 从 ZONE_DMA 区分配内存    |
+|   gfp_t 标志   |           介绍            |
+| :------------: | :-----------------------: |
+| \_\_GFP_NORMAL | 从 ZONE_NORMAL 区分配内存 |
+|  \_\_GFP_DMA   |  从 ZONE_DMA 区分配内存   |
 
 - 内存分配类型：前两类`gfp_t`标志是最底层的`gfp_t`标志，需要用户了解页分配器的内部实现才能正确使用。页分配器根据内存分配类型组合前两类`gfp_t`提供给用户使用，用户应当优先使用描述内存分配类型的`gfp_t`标志。
 
-| gfp_t 标志   | 介绍                                     |
-|:----------:| -------------------------------------- |
-| GFP_KERNEL | 内核常规的分配请求。从 ZONE_DMA 区分配内存，且可能阻塞进程。    |
-| GFP_DMA    | 分配用于 DMA 的内存。                          |
+| gfp_t 标志 | 介绍                                                                         |
+| :--------: | ---------------------------------------------------------------------------- |
+| GFP_KERNEL | 内核常规的分配请求。从 ZONE_DMA 区分配内存，且可能阻塞进程。                 |
+|  GFP_DMA   | 分配用于 DMA 的内存。                                                        |
 | GFP_ATOMIC | 高优先级的内存分配请求，在中断处理函数和持有锁的关键区使用，不导致进程睡眠。 |
 
 系统通过`struct page` 管理物理页，物理页的回收和释放都通过修改`struct page` 结构体实现，因此伙伴分配器的接口通过内存块首页的`struct page`指针来定位内存块。但从用户视角看，用户期望分配内存返回该内存块的起始虚拟地址，回收时传递该地址给伙伴系统的回收内存 API。因此，在伙伴系统提供的这些 API 之上，提供了用起始地址定位内存块的用户 API，其他子系统应该优先使用这些用户 API。用户 API 如下表所示。
 
-| 函数声明                                         | 介绍                           |
-|:--------------------------------------------:|:----------------------------:|
-| void *get_free_pages(uint32_t order);        | 分配`order`阶内存块，返回其起始虚拟地址。     |
-| void *get_free_page();                       | 分配一页内存，返回其起始虚拟地址。            |
-| void free_pages(void *addr, uint32_t order); | 回收起始虚拟地址为`addr`的`order`阶内存块。 |
-| void free_page(void *addr);                  | 释放起始虚拟地址为`addr`的页。           |
+|                   函数声明                    |                    介绍                     |
+| :-------------------------------------------: | :-----------------------------------------: |
+|    void \*get_free_pages(uint32_t order);     |  分配`order`阶内存块，返回其起始虚拟地址。  |
+|            void \*get_free_page();            |     分配一页内存，返回其起始虚拟地址。      |
+| void free_pages(void \*addr, uint32_t order); | 回收起始虚拟地址为`addr`的`order`阶内存块。 |
+|         void free_page(void \*addr);          |       释放起始虚拟地址为`addr`的页。        |
 
 ### 回退列表
 
@@ -333,29 +334,29 @@ SPARSEMEM-VMEMMAP 拓展的思路是：在 SPARSEMEM 中，`struct page` 为应�
 
 2. 优先从目标类型的`zone`分配：`ZONE_NORMAL`区域优先于`ZONE_DMA`区域。
 
-系统中所有的`zone`构成了一个*回退列表*（*fallback list*），回退列表的第一个元素是目标`zone`，从目标`zone`分配内存失败，则回退到下一个优先级更低的`zone`分配内存，尝试完整个回退列表的`zone`后仍然无法成功分配内存才算失败。例如，用户请求从`ZONE_NORMAL`区分配 8 页内存，页分配器会优先尝试本地`ZONE_NORMAL`区，失败则尝试本地`ZONE_DMA`区，仍然失败再去其他节点重复以上过程。
+系统中所有的`zone`构成了一个*回退列表*（_fallback list_），回退列表的第一个元素是目标`zone`，从目标`zone`分配内存失败，则回退到下一个优先级更低的`zone`分配内存，尝试完整个回退列表的`zone`后仍然无法成功分配内存才算失败。例如，用户请求从`ZONE_NORMAL`区分配 8 页内存，页分配器会优先尝试本地`ZONE_NORMAL`区，失败则尝试本地`ZONE_DMA`区，仍然失败再去其他节点重复以上过程。
 
 每个`struct node`节点都有自己的回退列表，在系统启动过程初始化。
 
-| 成员名        | 数据类型                                      | 介绍                                             |
-|:----------:|:-----------------------------------------:|:----------------------------------------------:|
+|   成员名   |                 数据类型                  |                                介绍                                |
+| :--------: | :---------------------------------------: | :----------------------------------------------------------------: |
 | zone_lists | struct zone_list zone_lists[MAX_NR_ZONES] | `struct node`节点为自己的所有`struct zone`都设置了对应的回退列表。 |
 
 回退列表`struct zone_list`定义如下：
 
-| 成员名   | 数据类型                                           | 介绍                                             |
-|:-----:|:----------------------------------------------:|:----------------------------------------------:|
-| zones | struct zone* [MAX_NR_NODES * MAX_NR_ZONES + 1] | `struct zone*`指针数组，数组元素指向对应`zone`，数组以`NULl`结尾。 |
+| 成员名 |                    数据类型                    |                                介绍                                |
+| :----: | :--------------------------------------------: | :----------------------------------------------------------------: |
+| zones  | struct zone* [MAX_NR_NODES * MAX_NR_ZONES + 1] | `struct zone*`指针数组，数组元素指向对应`zone`，数组以`NULl`结尾。 |
 
 ### 页分配与回收
 
 页分配算法流程如下：
 
-![页分配算法流程图](/home/kongjun/ownCloud/Obsidian/05-项目/paper/images/page-alloc-flowchart.drawio.svg)
+![页分配算法流程图](images/page-alloc-flowchart.drawio.svg)
 
 回收内存块流程如下：
 
-![页回收算法流程图](/home/kongjun/ownCloud/Obsidian/05-项目/paper/images/page-deallocate-flowchart.drawio.svg)
+![页回收算法流程图](images/page-deallocate-flowchart.drawio.svg)
 
 ### 伙伴系统的建立
 
