@@ -11,7 +11,8 @@
 - [ ] 内存模型添加 NUMA mem policy 介绍
 - [ ] 内存模型添加平坦内存模型 page_to_pfn 快的意义
 - [ ] 添加论文引用
-- [ ] 考虑将kmem_cache 接口介绍改成表，并且增加更详细的介绍，alloc的flag是 gfp_t
+- [ ] 考虑将 kmem_cache 接口介绍改成表，并且增加更详细的介绍，alloc 的 flag 是 gfp_t
+- [ ] 调试功能，添加论文引用
 
 ## 绪论
 
@@ -119,11 +120,11 @@ Linux 内核于 6.1 版本开始支持使用 Rust 语言编写驱动程序，试
 
 Linux 内核的三大类内存安全 bug 检测器总结如下：
 
-| Debugger   | Overhead      | OOB                | UAF                | invalid free       | double free        |
-| ---------- | ------------- | ------------------ | ------------------ | ------------------ | ------------------ |
-| slub_debug | 中等            | 对象被释放时             | 对象被重新分配时           | 立即                 | 立即                 |
-| kasan      | 非常高，不可用于生产环境。 | 立即                 | 立即（对象被重新分配后不再检测）   | 立即                 | 立即                 |
-| kfence     | 低，可用于生产环境。    | 立即或当 kfence 对象被释放时 | 立即（仅适用于 kfence 对象） | 立即（仅适用于 kfence 对象） | 立即（仅适用于 kfence 对象） |
+| Debugger   | Overhead                   | OOB                          | UAF                              | invalid free                 | double free                  |
+| ---------- | -------------------------- | ---------------------------- | -------------------------------- | ---------------------------- | ---------------------------- |
+| slub_debug | 中等                       | 对象被释放时                 | 对象被重新分配时                 | 立即                         | 立即                         |
+| kasan      | 非常高，不可用于生产环境。 | 立即                         | 立即（对象被重新分配后不再检测） | 立即                         | 立即                         |
+| kfence     | 低，可用于生产环境。       | 立即或当 kfence 对象被释放时 | 立即（仅适用于 kfence 对象）     | 立即（仅适用于 kfence 对象） | 立即（仅适用于 kfence 对象） |
 
 ### 论文主要工作与组织结构
 
@@ -255,12 +256,12 @@ _页分配器_（_page allocator_）指按页管理系统内存的分配与回�
 
 本系统为每个节点中的页帧都保留一个对应的`struct page`结构体，该结构体定义如下。
 
-| 成员名称    | 数据类型                    | 描述       |
-|:-------:|:-----------------------:| -------- |
-| flags   | uint32_t                | 物理页状态    |
-| count   | int32_t                 | 物理页使用者数量 |
-| private | uint64_t                | 存储私有数据   |
-| lru     | struct linked_list_node | 链表节点     |
+| 成员名称 |        数据类型         | 描述             |
+| :------: | :---------------------: | ---------------- |
+|  flags   |        uint32_t         | 物理页状态       |
+|  count   |         int32_t         | 物理页使用者数量 |
+| private  |        uint64_t         | 存储私有数据     |
+|   lru    | struct linked_list_node | 链表节点         |
 
 系统要为每个跟踪的物理页保留一个`struct page`结构体，因此`struct page`的大小必须要足够小，以便保留足够多的可用内存。因此`struct page`是整个系统中最为复杂的结构体，其复杂性在于每个`struct page`的字段都是精心编码的，在不同的场景下有不同的含义。
 
@@ -276,10 +277,10 @@ _页分配器_（_page allocator_）指按页管理系统内存的分配与回�
 
 `struct free_area`字段如下：
 
-| 字段名称      | 数据类型                    | 描述           |
-|:---------:|:-----------------------:|:------------:|
-| free_list | struct linked_list_node | 空闲列表头指针      |
-| nr_free   | int32_t                 | 空闲列表包含的空闲块数量 |
+| 字段名称  |        数据类型         |           描述           |
+| :-------: | :---------------------: | :----------------------: |
+| free_list | struct linked_list_node |      空闲列表头指针      |
+|  nr_free  |         int32_t         | 空闲列表包含的空闲块数量 |
 
 空闲块的第一页称为*首页*（_first page_），其余页面均称为*尾页*（_tail page_），首页的`struct page`代表整个空闲块的状态，`free_list`空闲列表指向第一个空闲块首页的`lru`链表节点，空闲块通过首页`struct page`的`lru`链表节点链接起来。
 
@@ -287,47 +288,47 @@ _页分配器_（_page allocator_）指按页管理系统内存的分配与回�
 
 伙伴系统提供的 API 如下：
 
-| 函数声明                                                                           | 介绍                        |
-|:------------------------------------------------------------------------------:|:-------------------------:|
-| struct page *alloc_pages_node(struct node *node, uint32_t order, gfp_t flags); | 从节点`node`分配`order`阶内存块    |
-| struct page \*alloc_pages(uint32_t order, gfp_t flags);                        | 从当前 CPU 所属节点分配`order`阶内存块 |
-| struct page \*alloc_page(gfp_t flags);                                         | 从当前 CPU 所属节点分配一页内存        |
-| void free_pages(struct page \*page, uint32_t order);                           | 回收首页为`page`的`order`阶内存块   |
-| void free_pages(struct page \*page);                                           | 回收物理页`page`               |
+|                                    函数声明                                    |                  介绍                  |
+| :----------------------------------------------------------------------------: | :------------------------------------: |
+| struct page *alloc_pages_node(struct node *node, uint32_t order, gfp_t flags); |    从节点`node`分配`order`阶内存块     |
+|            struct page \*alloc_pages(uint32_t order, gfp_t flags);             | 从当前 CPU 所属节点分配`order`阶内存块 |
+|                     struct page \*alloc_page(gfp_t flags);                     |    从当前 CPU 所属节点分配一页内存     |
+|              void free_pages(struct page \*page, uint32_t order);              |   回收首页为`page`的`order`阶内存块    |
+|                      void free_pages(struct page \*page);                      |            回收物理页`page`            |
 
 其中`gfp_t`标志决定页分配器如何分配内存。`gfp_t`标志可以分为以下三大类：
 
 - 调整行为：系统内存不足时，请求内存分配的进程可以休眠，等获取了内存的进程释放内存后再重试。但在中断处理例程中，进程不得休眠，否则迟迟不结束的中断处理例程会导致这期间的所有同类型中断丢失，严重影响系统吞吐量。
 
-| gfp_t 标志        | 介绍           |
-|:---------------:|:------------:|
-| \_\_GFP_WAIT    | 允许内存分配导致进程休眠 |
-| \_\_GFP_NORETRY | 内存分配失败后不再重试  |
-| \_\_GFP_NOFAIL  | 内存分配失败后无限重试  |
+|   gfp_t 标志    |           介绍           |
+| :-------------: | :----------------------: |
+|  \_\_GFP_WAIT   | 允许内存分配导致进程休眠 |
+| \_\_GFP_NORETRY |  内存分配失败后不再重试  |
+| \_\_GFP_NOFAIL  |  内存分配失败后无限重试  |
 
 - 调整内存分配区域：内存被划分为多个`node`节点，`node`节点的内存又被划分为多个`zone`，用户可以要求页分配器从特定类型的`zone`分配内存。
 
-| gfp_t 标志       | 介绍                  |
-|:--------------:|:-------------------:|
+|   gfp_t 标志   |           介绍            |
+| :------------: | :-----------------------: |
 | \_\_GFP_NORMAL | 从 ZONE_NORMAL 区分配内存 |
-| \_\_GFP_DMA    | 从 ZONE_DMA 区分配内存    |
+|  \_\_GFP_DMA   |  从 ZONE_DMA 区分配内存   |
 
 - 内存分配类型：前两类`gfp_t`标志是最底层的`gfp_t`标志，需要用户了解页分配器的内部实现才能正确使用。页分配器根据内存分配类型组合前两类`gfp_t`提供给用户使用，用户应当优先使用描述内存分配类型的`gfp_t`标志。
 
-| gfp_t 标志   | 介绍                                     |
-|:----------:| -------------------------------------- |
-| GFP_KERNEL | 内核常规的分配请求。从 ZONE_DMA 区分配内存，且可能阻塞进程。    |
-| GFP_DMA    | 分配用于 DMA 的内存。                          |
+| gfp_t 标志 | 介绍                                                                         |
+| :--------: | ---------------------------------------------------------------------------- |
+| GFP_KERNEL | 内核常规的分配请求。从 ZONE_DMA 区分配内存，且可能阻塞进程。                 |
+|  GFP_DMA   | 分配用于 DMA 的内存。                                                        |
 | GFP_ATOMIC | 高优先级的内存分配请求，在中断处理函数和持有锁的关键区使用，不导致进程睡眠。 |
 
 系统通过`struct page` 管理物理页，物理页的回收和释放都通过修改`struct page` 结构体实现，因此伙伴分配器的接口通过内存块首页的`struct page`指针来定位内存块。但从用户视角看，用户期望分配内存返回该内存块的起始虚拟地址，回收时传递该地址给伙伴系统的回收内存 API。因此，在伙伴系统提供的这些 API 之上，提供了用起始地址定位内存块的用户 API，其他子系统应该优先使用这些用户 API。用户 API 如下表所示。
 
-| 函数声明                                          | 介绍                           |
-|:---------------------------------------------:|:----------------------------:|
-| void \*get_free_pages(uint32_t order);        | 分配`order`阶内存块，返回其起始虚拟地址。     |
-| void \*get_free_page();                       | 分配一页内存，返回其起始虚拟地址。            |
+|                   函数声明                    |                    介绍                     |
+| :-------------------------------------------: | :-----------------------------------------: |
+|    void \*get_free_pages(uint32_t order);     |  分配`order`阶内存块，返回其起始虚拟地址。  |
+|            void \*get_free_page();            |     分配一页内存，返回其起始虚拟地址。      |
 | void free_pages(void \*addr, uint32_t order); | 回收起始虚拟地址为`addr`的`order`阶内存块。 |
-| void free_page(void \*addr);                  | 释放起始虚拟地址为`addr`的页。           |
+|         void free_page(void \*addr);          |       释放起始虚拟地址为`addr`的页。        |
 
 ### 回退列表
 
@@ -341,15 +342,15 @@ _页分配器_（_page allocator_）指按页管理系统内存的分配与回�
 
 每个`struct node`节点都有自己的回退列表，在系统启动过程初始化。
 
-| 成员名        | 数据类型                                      | 介绍                                             |
-|:----------:|:-----------------------------------------:|:----------------------------------------------:|
+|   成员名   |                 数据类型                  |                                介绍                                |
+| :--------: | :---------------------------------------: | :----------------------------------------------------------------: |
 | zone_lists | struct zone_list zone_lists[MAX_NR_ZONES] | `struct node`节点为自己的所有`struct zone`都设置了对应的回退列表。 |
 
 回退列表`struct zone_list`定义如下：
 
-| 成员名   | 数据类型                                           | 介绍                                             |
-|:-----:|:----------------------------------------------:|:----------------------------------------------:|
-| zones | struct zone* [MAX_NR_NODES * MAX_NR_ZONES + 1] | `struct zone*`指针数组，数组元素指向对应`zone`，数组以`NULl`结尾。 |
+| 成员名 |                    数据类型                    |                                介绍                                |
+| :----: | :--------------------------------------------: | :----------------------------------------------------------------: |
+| zones  | struct zone* [MAX_NR_NODES * MAX_NR_ZONES + 1] | `struct zone*`指针数组，数组元素指向对应`zone`，数组以`NULl`结尾。 |
 
 ### 页分配与回收
 
@@ -418,15 +419,15 @@ void kmem_cache_destroy(struct kmem_cache *cachep);
 
 `kem_cache_create()`创建 cache 时，指定了对象的构造函数和析构函数，slab 分配器在为该对象分配内存时调用对象的构造函数，在回收该对象的内存时调用对象的析构函数。对象的构造函数和析构函数原型相同，完整的声明如下：
 
-| 函数原型                                                             | 介绍                                                                                          |
-|:----------------------------------------------------------------:|:-------------------------------------------------------------------------------------------:|
-| void *ctor(void *objp, struct kmem_cache *cachep, uint32_t flag) | objp 是对象起始虚拟地址，cachep 指向对象所属的缓存，flag 告知构造函数其运行环境，用于调整构造函数的行为。返回值为 void*，意味着构造函数可以返回任意类型的数据。 |
-| void *dtor(void *objp, struct kmem_cache *cachep, uint32_t flag) | 同上                                                                                          |
+|                             函数原型                              |                                                                               介绍                                                                               |
+| :---------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| void *ctor(void *objp, struct kmem_cache \*cachep, uint32_t flag) | objp 是对象起始虚拟地址，cachep 指向对象所属的缓存，flag 告知构造函数其运行环境，用于调整构造函数的行为。返回值为 void\*，意味着构造函数可以返回任意类型的数据。 |
+| void *dtor(void *objp, struct kmem_cache \*cachep, uint32_t flag) |                                                                               同上                                                                               |
 
 传递给构造函数和析构函数的`flag`如下：
 
-| 标志名         | 介绍             |
-|:-----------:|:--------------:|
+|   标志名    |             介绍             |
+| :---------: | :--------------------------: |
 | CTOR_ATOMIC | 要求构造函数不得导致进程休眠 |
 
 以分配磁盘中文件的管理结构`struct inode`为例，展示典型的 slab 分配器使用方式。
@@ -465,57 +466,57 @@ kmem_cache_destroy(inode_cachep);
 
 slab 分配器的结构如下：
 
-![slab 分配器物理结构](/home/kongjun/ownCloud/Obsidian/05-项目/paper/images/kmem_cache-physical-structure.drawio.svg)
+![slab 分配器物理结构](images/kmem_cache-physical-structure.drawio.svg)
 
 `struct cache`描述一个 cache，定义较为复杂，下文会在具体算法流程中详细介绍。`struct cache`字段如下：
 
-| 字段名称         | 类型                                              | 介绍                                              |
-| ------------ | ----------------------------------------------- | ----------------------------------------------- |
-| flags        | uint32_t                                        | kmem_cache_create 标志，决定 cache 创建 slab 和分配对象的行为。 |
-| obj_size     | uint32_t                                        | 对齐后的对象大小                                        |
-| obj_num      | uint32_t                                        | slab 能容纳的最大对象数量                                 |
-| slab_size    | uint32_t                                        | slabmgt 占用的字节数                                  |
-| free_limit   | uint32_t                                        | cache 能容纳的空闲对象的最大数量                             |
-| slabp_cache  | struct kmem_cache *                             | 分配 slab 管理结构的 kmem_cache                        |
-| objp_cache   | struct objp_cache*                              | 缓存本 cache 中空闲对象指针                               |
-| gfpflags     | gfp_t                                           | 底层页分配器标志                                        |
-| order        | uint32_t                                        | 底层页分配器分配内存的阶数                                   |
-| slab_full    | struct linked_list_node                         | 容量已满的 slab 所处的链表                                |
-| slab_empty   | struct linked_list_node                         | 空闲 slab 所处的链表                                   |
-| slab_partial | struct linked_list_node                         | 容量未满且非空的 slab 所处的链表                             |
-| free_objs    | uint32_t                                        | cache 中的空闲对象数量                                  |
-| color        | uint32_t                                        | 缓存行着色范围                                         |
-| color_off    | uint32_t                                        | 缓存行着手偏移                                         |
-| color_next   | uint32_t                                        | 缓存行颜色                                           |
-| ctor         | void (*)(void *, struct kmem_cache *, uint32_t) | 对象构造函数                                          |
-| dtor         | void (*)(void *, struct kmem_cache *, uint32_t) | 对象析构函数                                          |
-| name         | const char*                                     | cache 名称                                        |
-| list         | struct linked_list_node                         | cache 自身的链表节点                                   |
+| 字段名称     | 类型                                             | 介绍                                                            |
+| ------------ | ------------------------------------------------ | --------------------------------------------------------------- |
+| flags        | uint32_t                                         | kmem_cache_create 标志，决定 cache 创建 slab 和分配对象的行为。 |
+| obj_size     | uint32_t                                         | 对齐后的对象大小                                                |
+| obj_num      | uint32_t                                         | slab 能容纳的最大对象数量                                       |
+| slab_size    | uint32_t                                         | slabmgt 占用的字节数                                            |
+| free_limit   | uint32_t                                         | cache 能容纳的空闲对象的最大数量                                |
+| slabp_cache  | struct kmem_cache \*                             | 分配 slab 管理结构的 kmem_cache                                 |
+| objp_cache   | struct objp_cache\*                              | 缓存本 cache 中空闲对象指针                                     |
+| gfpflags     | gfp_t                                            | 底层页分配器标志                                                |
+| order        | uint32_t                                         | 底层页分配器分配内存的阶数                                      |
+| slab_full    | struct linked_list_node                          | 容量已满的 slab 所处的链表                                      |
+| slab_empty   | struct linked_list_node                          | 空闲 slab 所处的链表                                            |
+| slab_partial | struct linked_list_node                          | 容量未满且非空的 slab 所处的链表                                |
+| free_objs    | uint32_t                                         | cache 中的空闲对象数量                                          |
+| color        | uint32_t                                         | 缓存行着色范围                                                  |
+| color_off    | uint32_t                                         | 缓存行着手偏移                                                  |
+| color_next   | uint32_t                                         | 缓存行颜色                                                      |
+| ctor         | void (_)(void _, struct kmem_cache \*, uint32_t) | 对象构造函数                                                    |
+| dtor         | void (_)(void _, struct kmem_cache \*, uint32_t) | 对象析构函数                                                    |
+| name         | const char\*                                     | cache 名称                                                      |
+| list         | struct linked_list_node                          | cache 自身的链表节点                                            |
 
 `struct slab`字段如下：
 
-| 字段名称      | 类型                      | 介绍                                   |
-| --------- | ----------------------- | ------------------------------------ |
+| 字段名称  | 类型                    | 介绍                                                          |
+| --------- | ----------------------- | ------------------------------------------------------------- |
 | color_off | uint32_t                | slab 颜色与 slab 管理对象之和，即对象到缓存区起始地址的偏移。 |
-| mem       | void*                   | slab 缓存区中第一个对象的地址                    |
-| inuse     | uint32_t                | slab 中已分配对象数量                        |
-| list      | struct linked_list_node | slab 的链表节点                           |
-| freelist  | kmem_bufctl_t           | 对象空闲列表                               |
+| mem       | void\*                  | slab 缓存区中第一个对象的地址                                 |
+| inuse     | uint32_t                | slab 中已分配对象数量                                         |
+| list      | struct linked_list_node | slab 的链表节点                                               |
+| freelist  | kmem_bufctl_t           | 对象空闲列表                                                  |
 
 `struct objp_cache`字段如下：
 
-| 字段名称        | 类型      | 介绍                                         |
-| ----------- | ------- | ------------------------------------------ |
-| capacity    | int32_t | 数组容量                                       |
-| avail       | int32_t | 已使用元素数量                                    |
+| 字段名称    | 类型    | 介绍                                                        |
+| ----------- | ------- | ----------------------------------------------------------- |
+| capacity    | int32_t | 数组容量                                                    |
+| avail       | int32_t | 已使用元素数量                                              |
 | batch_count | int32_t | 批处理数量，每次修改`objp_cache`均修改`batch_count`个元素。 |
-| touched     | int32_t | `objp_cache`是否被访问                          |
+| touched     | int32_t | `objp_cache`是否被访问                                      |
 
 ### 对象管理
 
-slab 分配器以 slab 为内存管理基本单位。slab 包含一段连续的物理内存，称为 slab buffer。slab 缓存区由页分配器分配，因此其大小为2^N页。slab 缓存区布局如下：
+slab 分配器以 slab 为内存管理基本单位。slab 包含一段连续的物理内存，称为 slab buffer。slab 缓存区由页分配器分配，因此其大小为 2^N 页。slab 缓存区布局如下：
 
-![slab 缓存区布局](/home/kongjun/ownCloud/Obsidian/05-项目/paper/images/on-slab-and-off-slab.drawio.svg)
+![slab 缓存区布局](images/on-slab-and-off-slab.drawio.svg)
 
 将大小小于 1/8 页的对象视作小对象。对于小对象，slab 分配器从页分配器分配一页作为 slab buffer，把 slab 管理结构 slabmgt 和对象都放置在 slab buffer 中。这种将 slab 管理结构 slabmgt 和被管理的对象放在一起的情形，称为 on-slab。
 
@@ -525,23 +526,61 @@ slabmgt 包括`struct slab`和对象空闲列表。对象空闲列表实现为�
 
 空闲列表的结构如下图所示，虚线箭头表示 bufctl 和对象的对应关系，实线箭头表示空闲列表元素的链接关系。空白块表示该对象未分配，灰色块表示该对象已分配。
 
-![freelist-management](/home/kongjun/ownCloud/Obsidian/05-项目/paper/images/freelist-management.drawio.svg)
+![freelist-management](images/freelist-management.drawio.svg)
 
 通常 slab buffer 存放 slabmgt 和对象后，还会剩下一段内存，slab 分配器把 slabmgt 和对象放在 slab buffer 的最后面，将剩下的这段内存放在 buffer 最前面，这段内存用于缓存行着色，“缓存行着色”一节详细介绍。
 
 和其他分配算法相同，分配回收对象最终体现为对空闲列表的操作。分配对象时从空闲列表摘取第一个 bufctl，释放对象时将 bufctl 插入到空闲列表头部中。
 
-下图展示对象分配回收对空闲列表的修改。
+下图展示对象分配回收对空闲列表的修改。初始时，slab 空闲，空闲列表为 freelist->0->1->2->3；分配一个对象后空闲列表为 freelist->1->2->3；再次分配后空闲列表为 freelist->2->3；释放对象 0 后，空闲列表为 freelist->0->2->3。
 
-![空闲链表对象分配回收过程](/home/kongjun/ownCloud/Obsidian/05-项目/paper/images/alloc-obj-freelist-management.drawio.svg)
+![空闲链表对象分配回收过程](images/alloc-obj-freelist-management.drawio.svg)
 
 ### 对象分配与回收
 
-`struct objp_cache`是一个指针数组，其指针元素指向
+slabmgt 记录了对象的分配情况，而`objp_cache`缓存了可分配对象的指针。用户请求分配时 slab allocator 直接从`objp_cache`摘取一个对象指针并返回即可，从而减少了修改底层 slab 空闲列表的次数，提高了内存分配性能。
 
+![objp_cache 缓存](images/alloc-obj-simple-flowchart.drawio.svg)
 
+具体流程如下：
+
+1. 如果`objp_cache`非空，则直接从`objp_cache`分配即可。
+
+2. 如果`objp_cache`已空，则尝试从 slab 分配。优先从非空 slab 分配对象，没有非空对象才从空闲 slab 分配对象。如果连空闲对象都没有，这时 slab 分配器需要从底层页分配器分配内存，新建一个 slab 并从中分配。
+
+3. 为了减少底层 slab 分配器的分配次数，每次从底层分配器分配`objp_cache->batch_count`个对象并将其指针压入`objp_cache`末尾；如果`objp_cache->touched `为 0，说明该 cache 的内存分配并不活跃，因此只向底层 slab 分配器请求更少的`INACTIVE_BATCH_COUNT`个对象。
+
+4. 从`objp_cache`末尾取对象指针并返回。
+
+对象分配流程图如下：
+
+![对象分配流程图](images/alloc-obj-flow-chart.drawio.svg)
+
+cache 中的每个 slab 都是相同的，对象大小、对象数量、slab 占用的内存等配置由`kmem_cache_create()`设置，分配 slab 只需向底层页分配器请求内存，初始化 slabmgt，调用构造函数构造对象，并将新创建的 slab 假如到`slab_partial`链表即可。
+
+释放对象是分配对象的逆过程，具体流程如下：
+
+1. 修改 slab 的空闲列表，释放对象。
+
+2. 根据 slab 中空闲对象的数量，将其加入到`slab_partial`或`slab_empty`链表。
+
+3. 若 slab 已空，且 cache 中的空闲对象数量超过`free_limit`，则销毁该 slab（调用析构函数，释放 slab 内存）。
 
 ### 调试功能
+
+据论文 xx 描述，SunOS 5.4 利用 slab 分配器实现了以下功能：
+
+- 内存审计：slab 分配器保存它的所有内存分配记录，包括时间戳、栈轨迹、调用者所在线程等。此功能用于发现内存错误后调试。
+
+- 被释放内存块地址验证：slab 分配器记录所有合法的大内存块地址，`kmem_cache_free()`时验证被释放的内存块是否是先前分配的内存块。此功能确保`kmem_create_free()`释放的是合法地址上的内存。
+
+- 实现于用户态的内核内存泄露检测器：slab 分配器的内存审计模块记录了分配内存的时间戳，并通过设备文件 dev/kmem 将此数据暴露给用户态。用户态内存泄露检测器周期性的扫描 /dev/kmem，如果发现某块内存在很久之前分配，但目前仍未被释放，则这块内存很可能发生了内存泄露。这种方案只是报告可能发生的内存泄露，无法确定是否真的发生内存泄露。
+
+- 缓存区溢出检测：在对象前后分别增加一小块区域，这块区域称为*红区*（_redzone_），通过检测红区判断是否发生缓冲区溢出。后文详细介绍红区检测算法。
+
+- use-after-free 检测：SunOS 5.4 通过标记对象实现在分配对象时检测到该对象上的 use-after-free，后文详细介绍此算法。还可以通过两个 slab 分配器的两个拓展运行模式立即检测到 slab 区域和对象上的 use-after-free。SunOS 5.4 有一个*同步取消映射模式*（_synchronous-unmapping mode_），在此模式下销毁 slab 不仅释放内存，还取消对于内存区域的页表映射，下次访问该 slab 内存区域将导致页错误异常，从而实现 use-after-free 的立即检测。此外，SunOS 5.4 还同步取消映射模式用于 slab 对象，每个对象都占用一页，以浪费物理内存为代价实现 slab 对象上的 use-after-free 立即检测。
+
+本系统实现了基于红区检测实现 slab 对象缓冲区越界检测，基于标记对象实现 slab 对象上的 use-after-free 检测。
 
 ### 缓存行着色
 
