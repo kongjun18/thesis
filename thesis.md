@@ -580,7 +580,25 @@ cache 中的每个 slab 都是相同的，对象大小、对象数量、slab 占
 
 - use-after-free 检测：SunOS 5.4 通过标记对象实现在分配对象时检测到该对象上的 use-after-free，后文详细介绍此算法。还可以通过两个 slab 分配器的两个拓展运行模式立即检测到 slab 区域和对象上的 use-after-free。SunOS 5.4 有一个*同步取消映射模式*（_synchronous-unmapping mode_），在此模式下销毁 slab 不仅释放内存，还取消对于内存区域的页表映射，下次访问该 slab 内存区域将导致页错误异常，从而实现 use-after-free 的立即检测。此外，SunOS 5.4 还同步取消映射模式用于 slab 对象，每个对象都占用一页，以浪费物理内存为代价实现 slab 对象上的 use-after-free 立即检测。
 
-本系统实现了基于红区检测实现 slab 对象缓冲区越界检测，基于标记对象实现 slab 对象上的 use-after-free 检测。
+本系统实现了基于红区检测实现 slab 对象缓冲区越界检测，基于标记对象实现 slab 对象上的 use-after-free 检测。在对象两侧分别设置 64 字节的 redzone，redzone 算在 slab 对象中。增加调试功能后，slab 对象的布局如下：
+
+![slab 对象布局](images/slab-debug-layout.drawio.svg)
+
+将 slab 对象的状态分为活跃状态与非活跃状态，对象在分配后释放前的时间视作处于活跃状态，分配前或释放后视作处于非活跃状态。这两个状态下红区和实际的 slab 对象必须为以下值，否则视作发生了内存安全 bug。
+
+![slab 对象调试标记](images/slab-debug-status.drawio.svg)
+
+以 slab 对象分配回收的整个声明周期为例说明调试功能使用的算法：
+
+1. 创建 slab 时，设置调试标记。redzone 写为`REDZONE_INACTIVE`，对象写为`OBJ_INUSE`。
+
+2. `kmem_cache_alloc()`分配对象后返回前，检测调试标记。如果 redzone 值不等于`REDZONE_INACTIVE`，则说明发生缓冲区溢出；如果对象值不等于`OBJ_INUSE`，说明对象上发生 use-after-free。对象被分配后使用过程中可能发生缓存区越界，因此 redzone 写为`REDZONE_ACTIVE`，表示 redzone 生效。为了检测 use-after-free，对象被写成`OBJ_FREE`或`OBJ_INUSE`，因此`kmem_cache_alloc()`返回前还要调用构造函数重新初始化对象。
+
+3. `kmem_cache_free()`释放对象时，检测并设置调试标记。redzone 值不等于`REDZONE_ACTIVE`，说明发生缓存区越界（应为`REDZONE_ACTIVE`的值被修改）或对象上发生 double-free（释放后的对象其 redzone 为`REDZONE_INACTIVE`）；对象值不用检查，因为此时对象中是用户数据。将 redzone 写为`REDZONE_INACTIVE`，对象值写成`OBJ_FREE`。
+
+4. 销毁 slab 时，检测并设置调试标记。redzone 不等于`REDZONE_INACTIVE`说明发生缓冲区越界；对象值不等于`OBJ_FREE`说明发生 use-after-free。
+
+5.
 
 ### 缓存行着色
 
