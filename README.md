@@ -384,7 +384,7 @@ slab 分配器起源自 SunOS 5.4 内核，其设计思路是通过缓存对象�
 
 除了缓存对象外，slab 分配器还有以下优点：
 
-1. 缓存利用率高：slab 分配器通过*缓存行着色*（_cache-line coloring_)提高了系统总体的缓存利用率和总线平衡程度。
+1. 缓存利用率高：slab 分配器通过*slab 着色*（_slab coloring_)提高了系统总体的缓存利用率和总线平衡程度。
 
 2. 内存碎片小且可调节：slab 分配器无外碎片，且对于容量为 N 个对象的 slab 分配器，内碎片比例比超过 1/N。
 
@@ -485,9 +485,9 @@ slab 分配器的结构如下：
 | slab_empty   | struct linked_list_node                          | 空闲 slab 所处的链表                                   |
 | slab_partial | struct linked_list_node                          | 容量未满且非空的 slab 所处的链表                             |
 | free_objs    | uint32_t                                         | cache 中的空闲对象数量                                  |
-| color        | uint32_t                                         | 缓存行着色范围                                         |
-| color_off    | uint32_t                                         | 缓存行着色偏移                                         |
-| color_next   | uint32_t                                         | 缓存行颜色                                           |
+| color        | uint32_t                                         | slab 着色范围                                       |
+| color_off    | uint32_t                                         | slab 着色偏移                                       |
+| color_next   | uint32_t                                         | 下一 slab 的颜色                                     |
 | ctor         | void (_)(void _, struct kmem_cache \*, uint32_t) | 对象构造函数                                          |
 | dtor         | void (_)(void _, struct kmem_cache \*, uint32_t) | 对象析构函数                                          |
 | name         | const char\*                                     | cache 名称                                        |
@@ -528,7 +528,7 @@ slabmgt 包括`struct slab`和对象空闲列表。对象空闲列表实现为�
 
 ![freelist-management](images/freelist-management.drawio.svg)
 
-通常 slab buffer 存放 slabmgt 和对象后，还会剩下一段内存，slab 分配器把 slabmgt 和对象放在 slab buffer 的最后面，将剩下的这段内存放在 buffer 最前面，这段内存用于缓存行着色，“缓存行着色”一节详细介绍。
+通常 slab buffer 存放 slabmgt 和对象后，还会剩下一段内存，slab 分配器把 slabmgt 和对象放在 slab buffer 的最后面，将剩下的这段内存放在 buffer 最前面，这段内存用于 slab 着色，“硬件缓存利用率”一节详细介绍。
 
 和其他分配算法相同，分配释放对象最终体现为对空闲列表的操作。分配对象时从空闲列表摘取第一个 bufctl，释放对象时将 bufctl 插入到空闲列表头部中。
 
