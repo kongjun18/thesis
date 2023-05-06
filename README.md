@@ -666,6 +666,5 @@ slab 分配器没有严重的内存碎片问题，但存在一定的内存浪费
 
 ## slab 分配器的初始化
 
-# 致谢
 
 [^1]: 实际上是一个 NR_SECTION_ROOTS \* SECTION_PER_ROOT 大小的二维数组，因为 SECTION_PER_ROOT 定义为 1，因此这里说是一维数组。

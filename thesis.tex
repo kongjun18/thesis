@@ -21,7 +21,7 @@
 % 	      长标题 \title{{第一行}{第二行}}
 %             超长标题\tiitle{{第一行}{...}{第N行}}
 
-\title{{教学操作系统内核内存分配器设计}}
+\title{{基于 RISC-V 指令集的教学操作系统}{内核内存分配器设计}}
 
 
 
@@ -30,7 +30,7 @@
 % 	      长标题 \entitle{{First row}{ Second row}}
 %             超长标题\entitle{{First row}{...}{ Next N row}}
 % 注意：  英文标题多行时 需要在开头加个空格 防止摘要标题处英语单词粘连。
-\entitle{{Design of memory allocator for teaching operating system kernel}}
+\entitle{{Design and Implementation of Memory Allocator}{for Teaching Operating System Based on RISC-V}}
 
 \author{孔俊}
 \major{计算机科学与技术}
@@ -42,63 +42,9 @@
 
 \maketitle
 
-%==============================%
-% ↓ ↓ ↓ 诚信说明页 授权说明书
-%==============================%
-
-% 1. 可以调整签字的宽度，现在是40
-% 2. 去掉raisebox的相关注释(注意上下大括号对应)，可以改变-5那个数字调整签名和横线的上下位置
-
-% 你的签名，signature.pdf 改为你的签名文件名，
-\mysignature{
-    % \raisebox{-5pt}{
-        \includegraphics[width=40pt]{signature.pdf}
-    % }
-}
-% 你手写的日期，signature.pdf 改为你的手写的日期文件名
-\mytime{
-    % \raisebox{-5pt}{
-        \includegraphics[width=40pt]{signature.pdf}
-    % }
-}
-% 老师的手写签名，signature.pdf 改为老师的手写签名文件名
-\supervisorsignature{
-    % \raisebox{-5pt}{
-        \includegraphics[width=40pt]{signature.pdf}
-    % }
-}
-% 老师手写的时间，signature.pdf 改为老师的手写的日期文件名
-\teachertime{
-    % \raisebox{-5pSt}{
-        \includegraphics[width=40pt]{signature.pdf}
-    % }
-}
-% 老师手写的成绩
-\recommendedgrade{
-    % \raisebox{-5pt}{
-        \includegraphics[width=40pt]{signature.pdf}
-    % }
-}
-
-\makestatement
-
-%==============================%
-% ↑ ↑ ↑ 诚信说明页 授权说明书
-%==============================%
 
 
-%=====%
-%论文（设计）成绩：注意2007的模板要求，成绩页在最后，2021要求成绩页在摘要前面
-%=====%
 
-% 下面这些注释掉可以去掉成绩、评语什么的
-\supervisorcomment{导师评价你人很好}
-
-
-\committeecomment{优秀}
-
-\finalgrade{100}
-% 上面这些注释掉可以去掉成绩、评语什么的
 
 
 \frontmatter
@@ -717,8 +663,8 @@ NUMA 配置探测，初始化多个节点即可。
 
 \emph{页分配器}（\emph{page
 allocator}）指按页管理系统内存的分配与释放的内存分配器，是操作系统最基础的组件。本论文的页分配器使用的主要算法是\emph{伙伴系统}（Binary
-Buddy Allocator），该算法由 Knowlton {[}Kno65{]} 设计并由 Knuth
-{[}Knu68{]} 进一步描述。与其他内存分配算法相比，伙伴系统有以下优点：
+Buddy Allocator），该算法由 Knowlton{\cite{knowlton1965fast}} 提出并由 Knuth
+{\cite{knuth1968art}} 进一步描述。与其他内存分配算法相比，伙伴系统有以下优点：
 
 \begin{itemize}
 \item
@@ -1060,7 +1006,7 @@ jemalloc
 
 \chapter{slab 分配器}
 
-slab 分配器起源自 SunOS 5.4
+slab 分配器起源自 SunOS 5.4{\cite{bonwick1994slab}}
 内核，其设计思路是通过缓存对象在多次使用间的结构状态来降低分配复杂对象的成本。这一方案背后的合理性在于，用户的内存分配请求实际上不是为了内存自身，而是为了构造对象；用户释放内存后，往往又要分配内存来构造统一类型的对象。并且，在许多场景下，对象构造和析构的成本并不低于分配和释放内存的成本。因此
 slab
 分配器将对象缓存起来，从而维持了对象的结构状态，所以对象不需要每次使用前构造，使用后析构，进而提升了系统性能。使用
@@ -1199,7 +1145,7 @@ slab 分配器的结构如下：
 
 \begin{figure}
 \centering
-\includesvg[width=500pt]{images/kmem_cache-physical-structure.drawio.svg}
+\includesvg[width=700pt]{images/kmem_cache-physical-structure.drawio.svg}
 \caption{slab 分配器物理结构}
 \end{figure}
 
@@ -1415,7 +1361,7 @@ slab 空闲列表的次数，提高了内存分配性能。
 
 \begin{figure}
 \centering
-\includegraphics{images/alloc-obj-flow-chart.drawio.pdf}
+\includegraphics[width=500pt]{images/alloc-obj-flow-chart.drawio-cropped.pdf}
 \caption{slab 分配器对象分配流程图}
 \end{figure}
 
@@ -1633,25 +1579,6 @@ slab、磁盘缓冲区等。
 \end{enumerate}
 
 
-\chapter{附录}
-
-
-\section{物理内存探测}
-
-
-\section{线性映射区}
-
-
-\section{页分配器的建立}
-
-
-\section{slab 分配器的初始化}
-
-
-\chapter{致谢}
-
-
-
 
 %论文后部
 \backmatter
@@ -1662,76 +1589,13 @@ slab、磁盘缓冲区等。
 %=======%
 \bibdatabase{bib/database}%bib文件名称 仅修改bib/ 后部分
 \printbib
-% \nocite{*} %显示数据库中有的，但是正文没有引用的文献
+\nocite{*} %显示数据库中有的，但是正文没有引用的文献
 
-
-
-\Appendix
-
-
-这里是附录页，附上你的程序或必要的相关知识
-
-{\bfseries 编译方式:} XeLaTeX -->BibTeX --> XeLaTeX-->XeLaTeX
 
 
 \Thanks
 
-这里是致谢页，你可以在这里致谢你的舍友，老师，朋友，或者我
 
-（我是谁？兰朵儿开发者：余航，致谢我，查重时一定会重复的，哈哈，开个玩笑，本科生论文不在查重范围，而且“毕业论文(设计)检测内容主要为毕业论文(设计)的主体部分”）。
-
-
-\Grade %这一句才是成绩页，上面是填写
-
-
-\end{document}
-
-\section{物理内存探测}
-
-
-\section{线性映射区}
-
-
-\section{页分配器的建立}
-
-
-\section{slab
-分配器的初始化}
-
-
-\chapter{致谢}
-
-
-
-%论文后部
-\backmatter
-
-
-%=======%
-%引入参考文献文件
-%=======%
-\bibdatabase{bib/database}%bib文件名称 仅修改bib/ 后部分
-\printbib
-% \nocite{*} %显示数据库中有的，但是正文没有引用的文献
-
-
-
-\Appendix
-
-
-这里是附录页，附上你的程序或必要的相关知识
-
-{\bfseries 编译方式:} XeLaTeX -->BibTeX --> XeLaTeX-->XeLaTeX
-
-
-\Thanks
-
-这里是致谢页，你可以在这里致谢你的舍友，老师，朋友，或者我
-
-（我是谁？兰朵儿开发者：余航，致谢我，查重时一定会重复的，哈哈，开个玩笑，本科生论文不在查重范围，而且“毕业论文(设计)检测内容主要为毕业论文(设计)的主体部分”）。
-
-
-\Grade %这一句才是成绩页，上面是填写
 
 \end{sloppypar}
 \end{document}
