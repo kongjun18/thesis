@@ -7,6 +7,7 @@
 \newcommand{\tightlist}{%
   \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
   \usepackage{shellesc}
+
 \begin{document}
 \begin{sloppypar}
 %=====%
@@ -20,70 +21,7 @@
 % 	      长标题 \title{{第一行}{第二行}}
 %             超长标题\tiitle{{第一行}{...}{第N行}}
 
-\title{{基于 RISC-V 指令集的教学操作系统内核}{内存分配器设计}}
-
-
-%==============================%
-% ↓ ↓ ↓ 诚信说明页 授权说明书
-%==============================%
-
-% 1. 可以调整签字的宽度，现在是40
-% 2. 去掉raisebox的相关注释(注意上下大括号对应)，可以改变-5那个数字调整签名和横线的上下位置
-
-% 你的签名，signature.pdf 改为你的签名文件名，
-\mysignature{
-    % \raisebox{-5pt}{
-        \includegraphics[width=40pt]{signature.pdf}
-    % }
-}
-% 你手写的日期，signature.pdf 改为你的手写的日期文件名
-\mytime{
-    % \raisebox{-5pt}{
-        \includegraphics[width=40pt]{signature.pdf}
-    % }
-}
-% 老师的手写签名，signature.pdf 改为老师的手写签名文件名
-\supervisorsignature{
-    % \raisebox{-5pt}{
-        \includegraphics[width=40pt]{signature.pdf}
-    % }
-}
-% 老师手写的时间，signature.pdf 改为老师的手写的日期文件名
-\teachertime{
-    % \raisebox{-5pSt}{
-        \includegraphics[width=40pt]{signature.pdf}
-    % }
-}
-% 老师手写的成绩
-\recommendedgrade{
-    % \raisebox{-5pt}{
-        \includegraphics[width=40pt]{signature.pdf}
-    % }
-}
-
-\makestatement
-
-%==============================%
-% ↑ ↑ ↑ 诚信说明页 授权说明书
-%==============================%
-
-
-%=====%
-%论文（设计）成绩：注意2007的模板要求，成绩页在最后，2021要求成绩页在摘要前面
-%=====%
-
-% 下面这些注释掉可以去掉成绩、评语什么的
-\supervisorcomment{导师评价你人很好}
-
-
-\committeecomment{优秀}
-
-\finalgrade{100}
-% 上面这些注释掉可以去掉成绩、评语什么的
-
-
-\frontmatter
-
+\title{{基于 RISC-V 指令集的教学操作系统内核}{内存分配器设计与实现}}
 
 
 % 标题样式 使用 \entitle{{}}; 使用时必须保证至少两个外侧括号
@@ -105,7 +43,63 @@
 
 
 
+%==============================%
+% ↓ ↓ ↓ 诚信说明页 授权说明书
+%==============================%
 
+% 1. 可以调整签字的宽度，现在是40
+% 2. 去掉raisebox的相关注释(注意上下大括号对应)，可以改变-5那个数字调整签名和横线的上下位置
+
+% 你的签名，signature.pdf 改为你的签名文件名，
+\mysignature{
+    % \raisebox{-5pt}{
+        \includegraphics[width=40pt]{my-signature.pdf}
+    % }
+}
+% 你手写的日期，signature.pdf 改为你的手写的日期文件名
+\mytime{
+    % \raisebox{-5pt}{
+        \includegraphics[width=40pt]{my-time.pdf}
+    % }
+}
+% % 老师的手写签名，signature.pdf 改为老师的手写签名文件名
+% \supervisorsignature{
+%     % \raisebox{-5pt}{
+%         \includegraphics[width=40pt]{signature.pdf}
+%     % }
+% }
+% % 老师手写的时间，signature.pdf 改为老师的手写的日期文件名
+% \teachertime{
+%     % \raisebox{-5pSt}{
+%         \includegraphics[width=40pt]{signature.pdf}
+%     % }
+% }
+% % 老师手写的成绩
+% \recommendedgrade{
+%     % \raisebox{-5pt}{
+%         \includegraphics[width=40pt]{signature.pdf}
+%     % }
+% }
+
+\makestatement
+
+%==============================%
+% ↑ ↑ ↑ 诚信说明页 授权说明书
+%==============================%
+
+
+%=====%
+%论文（设计）成绩：注意2007的模板要求，成绩页在最后，2021要求成绩页在摘要前面
+%=====%
+
+% % 下面这些注释掉可以去掉成绩、评语什么的
+% \supervisorcomment{}
+
+
+% \committeecomment{}
+
+% \finalgrade{}
+% % 上面这些注释掉可以去掉成绩、评语什么的
 
 
 \frontmatter
@@ -1676,7 +1670,7 @@ slab、磁盘缓冲区等。
 
 感谢我的父母，他们以坚韧的毅力将我抚养成人，并始终在背后支持着我，感谢父母像蜡烛一样点燃自己为我照亮黑夜。
 
-感谢我的女朋友孙金雨，她给我的生活增添了许多酸甜苦辣咸，感谢她陪我度过了找实习找工作的痛苦时光。
+感谢我的女朋友孙金雨，她给我的生活增添了许多酸甜苦辣咸，感谢她陪我度过了找实习找工作的痛苦时光，在互联网寒冬中给我带来丝丝暖意。
 
 这是论文的结束，是五年大学生涯的终点，也是我职业生涯的起点，\texttt{Hello, World!}。
 
