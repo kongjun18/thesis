@@ -1,4 +1,3 @@
-
 % !TEX TS-program = xelatex
 % !TEX encoding = UTF-8 Unicode
 
@@ -21,7 +20,69 @@
 % 	      长标题 \title{{第一行}{第二行}}
 %             超长标题\tiitle{{第一行}{...}{第N行}}
 
-\title{{基于 RISC-V 指令集的教学操作系统}{内核内存分配器设计}}
+\title{{基于 RISC-V 指令集的教学操作系统内核}{内存分配器设计}}
+
+
+%==============================%
+% ↓ ↓ ↓ 诚信说明页 授权说明书
+%==============================%
+
+% 1. 可以调整签字的宽度，现在是40
+% 2. 去掉raisebox的相关注释(注意上下大括号对应)，可以改变-5那个数字调整签名和横线的上下位置
+
+% 你的签名，signature.pdf 改为你的签名文件名，
+\mysignature{
+    % \raisebox{-5pt}{
+        \includegraphics[width=40pt]{signature.pdf}
+    % }
+}
+% 你手写的日期，signature.pdf 改为你的手写的日期文件名
+\mytime{
+    % \raisebox{-5pt}{
+        \includegraphics[width=40pt]{signature.pdf}
+    % }
+}
+% 老师的手写签名，signature.pdf 改为老师的手写签名文件名
+\supervisorsignature{
+    % \raisebox{-5pt}{
+        \includegraphics[width=40pt]{signature.pdf}
+    % }
+}
+% 老师手写的时间，signature.pdf 改为老师的手写的日期文件名
+\teachertime{
+    % \raisebox{-5pSt}{
+        \includegraphics[width=40pt]{signature.pdf}
+    % }
+}
+% 老师手写的成绩
+\recommendedgrade{
+    % \raisebox{-5pt}{
+        \includegraphics[width=40pt]{signature.pdf}
+    % }
+}
+
+\makestatement
+
+%==============================%
+% ↑ ↑ ↑ 诚信说明页 授权说明书
+%==============================%
+
+
+%=====%
+%论文（设计）成绩：注意2007的模板要求，成绩页在最后，2021要求成绩页在摘要前面
+%=====%
+
+% 下面这些注释掉可以去掉成绩、评语什么的
+\supervisorcomment{导师评价你人很好}
+
+
+\committeecomment{优秀}
+
+\finalgrade{100}
+% 上面这些注释掉可以去掉成绩、评语什么的
+
+
+\frontmatter
 
 
 
@@ -1587,6 +1648,8 @@ slab、磁盘缓冲区等。
 
 
 
+
+
 %论文后部
 \backmatter
 
@@ -1600,9 +1663,24 @@ slab、磁盘缓冲区等。
 
 
 
+
+
+
 \Thanks
 
+一切始于 2018 年夏天的一行\texttt{Hello, World!}，这是敲下的第一行代码，也是新世界的开始。
 
+大学第一个学期，\hyperlink{https://linuxtorvalds.com/}{Linus Torvalds} 的自传 \textit{Just for Fun: The Story of an Accidental Revolutionary}（中译本《只是为了好玩：Linux之父林纳斯自传》 和 \hyperlink{https://stallman.org/}{RMS(Richard Matthew Stallman)} 的传记 \textit{Free as in Freedom: Richard Stallman's Crusade for Free Software}（中译本《若为自由故：自由软件之父理查德·斯托曼传》）占据了我的生活，他们高昂的黑客精神深深地打动了我，促使我转专业到计算机。\hyperlink{https://www.moolenaar.net/}{Bram Moolenaar} 开发的 \hyperlink{https://www.vim.org/}{Vim} 及其后继 \hyperlink{https://neovim.io/}{Neovim}，见证了我学习工作一点一滴的进步。作为在自由软件运动和开源软件运动下成长起来的一代程序员，由衷感谢这些黑客以自己远见卓识创造了今天宏伟的软件世界，感谢互联网的盗火者冲破桎梏推动知识的自由传播。
+
+感谢兰州大学宽松的转专业政策，让我成功转专业到计算机，不至于在自己不感兴趣的领域蹉跎青春。
+
+感谢我的父母，他们以坚韧的毅力将我抚养成人，并始终在背后支持着我，感谢父母像蜡烛一样点燃自己为我照亮黑夜。
+
+感谢我的女朋友孙金雨，她给我的生活增添了许多酸甜苦辣咸，感谢她陪我度过了找实习找工作的痛苦时光。
+
+这是论文的结束，是五年大学生涯的终点，也是我职业生涯的起点，\texttt{Hello, World!}。
+
+\Grade %这一句才是成绩页，上面是填写
 
 \end{sloppypar}
 \end{document}
