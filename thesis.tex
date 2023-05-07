@@ -117,7 +117,8 @@
 \EnAbstract {In the teaching of computer science, engineering practice is an essential part. Teaching Operating Systems is applicable to the Department of Operating Systems
 A simple operating system for practical teaching of systemic courses. The physical memory management subsystem is the most basic subsystem of the operating system. Its core is the memory allocator, which is relied upon by all other modules of the system.
 
-This paper summarizes the development status of the physical memory management subsystem of the Linux kernel, and analyzes the evolution process of the memory model of the Linux kernel. This thesis completes the design and implementation of the physical memory management subsystem in the teaching operating system based on the RISC-V instruction set, including physical memory detection, page allocator, slab allocator, etc. In addition, the memory fragmentation of the memory allocator and the improvement methods are also analyzed.\fontspec{Times New Roman} {abcdQR}}
+This paper summarizes the development status of the physical memory management subsystem of the Linux kernel, and analyzes the evolution process of the memory model of the Linux kernel. This thesis completes the design and implementation of the physical memory management subsystem in the teaching operating system based on the RISC-V instruction set, including physical memory detection, page allocator, slab allocator, etc. In addition, the memory fragmentation of the memory allocator and the improvement methods are also analyzed.
+}
 {
 operating system; memory management; buddy system; cache
 }
@@ -156,7 +157,7 @@ operating system; memory management; buddy system; cache
 内存管理子系统是操作系统最重要最基础的子系统。以 Linux
 内核为例，目前内存管理子系统是 Linux
 内核最复杂的顶级子系统，以最新（截止 2023 年 5 月）的 Linux v6.2
-版本为例，Linux 源代码目录 mm 共计alloc-obj-flow-chart.drawio 176 个文件、182932
+版本为例，Linux 源代码目录 mm 共计 176 个文件、182932
 余行代码（包括注释和空行），而作为云计算基石的 KVM（Kernel-based Virtual
 Machine）源代码仅有 9396 余行。
 
