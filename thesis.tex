@@ -406,8 +406,6 @@ API 及其实现，最后分析内存碎片情况。
 
 第五章：结论与展望。简要概述系统的总体实现结果，展望未来本操作系统内存分配器的发展。
 
-第六章：附录。附录介绍了其他与实现内存分配器有关的重要主题，包括物理内存探测，建立线性映射区，物理内存分配器的建立，slab
-分配器的初始化等。
 
 
 \chapter{内存模型}
@@ -658,6 +656,9 @@ RISCV 架构，并且运行在 qemu 模拟器中，通过 virtio 协议操作外
 架构，但已经在软件层面完成了绝大多数工作，未来支持对称多处理器后，只需要进行
 NUMA 配置探测，初始化多个节点即可。
 
+本章所有功能实现代码托管在 GitHub 仓库。
+
+仓库链接：\href{https://github.com/RvOSLab/lzu_oslab}{https://github.com/RvOSLab/lzu\_oslab}。
 
 \chapter{页分配器}
 
@@ -1003,6 +1004,9 @@ jemalloc
 
 本系统在页分配器上实现 slab 分配器，用于满足非\(2^N\)页大小的内存请求。
 
+本章所有功能实现代码托管在 GitHub 仓库。
+
+仓库链接：\href{https://github.com/RvOSLab/lzu_oslab}{https://github.com/RvOSLab/lzu\_oslab}。
 
 \chapter{slab 分配器}
 
@@ -1541,6 +1545,9 @@ slab 可容纳 100 个对象的 cache，但却只分配了 2 个对象，剩下 
   优先从非空的 slab 分配对象。这样可以减少 slab 的数量，降低内存浪费。
 \end{enumerate}
 
+本章所有功能实现代码托管在 GitHub 仓库。
+
+仓库链接：\href{https://github.com/RvOSLab/lzu_oslab}{https://github.com/RvOSLab/lzu\_oslab}。
 
 \chapter{结论与展望}
 
