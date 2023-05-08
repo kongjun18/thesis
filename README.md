@@ -669,29 +669,45 @@ slab 分配器没有严重的内存碎片问题，但存在一定的内存浪费
 # 参考文献
 
 [1] Knowlton K C. A fast storage allocator[J]. Communications of the ACM, 1965, 8(10):623--624.
+
 [2] Knuth D E. The art ofcomputer programming vol. 1, fundamental algorithms[J]. ff Addison-Wesley, Read-
 ing, Massachusetts, 1968. 435.
+
 [3] Bonwick J, et al. The slab allocator: An object-caching kernel memory allocator.[C]. 1994.
+
 [4] Drepper U. What every programmer should know about memory[J]. Red Hat, Inc, 2007, 11(2007):2007.
+
 [5] Evans J. A scalable concurrent malloc (3) implementation for freebsd[C]. 2006.
+
 [6] Korn D G, Vo K P. In search of a better malloc[C]. 1985. 489--506.
+
 [7] Dube R. A comparison of the memory management sub-systems in freebsd and linux[R]. Technical report,
 1998.
+
 [8] Russell R. virtio: towards a de-facto standard for virtual i/o devices[J]. ACM SIGOPS Operating Systems
 Review, 2008, 42(5):95--103.
+
 [9] Yuan C, Gao X, Chen Y, et al. Teaching undergraduates to build real computer systems[J]. Communications
 of the ACM, 2021, 64(11):48--49.
+
 [10] Lütkebohle I. BWorld Robot Control Software[Z]. http://aiweb.techfak.uni-bielefeld.de/content/bworld-r
 obot-control-software/, 2008. [Online; accessed 19-July-2008].
+
 [11] Remove discintigmem memory model [lwn.net][DB/OL]. https://lwn.net/Articles/858333/, 2021.
+
 [12] sparsemem extreme implementation [lwn.net][DB/OL]. https://lwn.net/Articles/147285/, 2005.
+
 [13] sparsemem memory model [lwn.net][DB/OL]. https://lwn.net/Articles/134804/, 2005.
+
 [14] Memory: the flat, the discontiguous, and the sparse [lwn.net][DB/OL]. https://lwn.net/Articles/789304/,
 2021.
+
 [15] The kernel address sanitizer (kasan) —the linux kernel documentation[DB/OL]. https://www.kernel.org/d
 oc/html/latest/dev-tools/kasan.html, 2023.
+
 [16] Kernel electric-fence (kfence) —the linux kernel documentation[DB/OL]. https://www.kernel.org/doc/h
 tml/latest/dev-tools/kfence.html, 2023.
+
 [17] Detecting memory (x86) - osdev wiki[DB/OL]. https://wiki.osdev.org/Detecting_Memory_(x86)#BIOS_
 Function:_INT_0x15.2C_EAX_.3D_0xE820, 2022.
 
