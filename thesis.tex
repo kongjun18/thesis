@@ -886,7 +886,7 @@ gfp\_t 标志
 结构体实现，因此伙伴分配器的接口通过内存块首页的\texttt{struct\ page}指针来定位内存块。但从用户视角看，用户期望分配内存返回该内存块的起始虚拟地址，释放时传递该地址给伙伴系统的内存释放
 API。因此，在伙伴系统提供的这些 API
 之上，提供了用起始地址定位内存块的用户
-API，其他子系统应该优先使用这些用户 API。用户 API 见表\ref{slab-allocator-user-api}。
+API，其他子系统应该优先使用这些用户 API。用户 API 见表\ref{table:slab-allocator-user-api}。
 
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.6164}}
@@ -1076,7 +1076,7 @@ kmem_cache_create(const char name, uint64_t size, uint64_t align,
 // 从 cachep 指向的缓存中分配一个对象
 void* kmem_cache_alloc(struct kmem_cache *cachep, gfp_t flags);
 // 释放 objp 指向的对象，不释放底层内存。
-void kmem_cache_free(struct kmem_cache *cachep, void *objp);
+void kmem_cache_free(struct kmem_cache *cachep, void *obj);
 // 删除缓存中的空闲的 slab
 void kmem_cache_reap(struct kmem_cache *cachep);
 // 销毁缓存并释放其内存
@@ -1091,7 +1091,7 @@ void kmem_cache_destroy(struct kmem_cache *cachep);
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.4151}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5849}}@{}}
-\caption{构造函数/析构函数的声明}\label{table:zone-list-definition} \\
+\caption{构造函数/析构函数的声明}\label{table:obj-ctor-dtor} \\
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 函数原型
