@@ -1102,15 +1102,15 @@ void kmem_cache_destroy(struct kmem_cache *cachep);
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-\texttt{void\ *ctor(void\ *objp,\ struct\ kmem\_cache\ *cachep,\ uint32\_t\ flag)}
+\texttt{void\ *ctor(void\ *objp,\ struct\ kmem\_cache\ *cachep,\ uint32\_t\ flags)}
 &
 \texttt{objp}是对象起始虚拟地址，\texttt{cachep}指向对象所属的缓存，lag
 告知构造函数其运行环境，用于调整构造函数的行为。返回值为\texttt{void*}，意味着构造函数可以返回任意类型的数据。 \\
-\texttt{void\ *dtor(void\ *objp,\ struct\ kmem\_cache\ *cachep,\ uint32\_t\ flag)}
+\texttt{void\ *dtor(void\ *objp,\ struct\ kmem\_cache\ *cachep,\ uint32\_t\ flags)}
 & 同上 \\
 \end{longtable}
 
-传递给构造函数和析构函数的\texttt{flag}见图\ref{table:ctor-dtor-flags}。
+传递给构造函数和析构函数的\texttt{flags}见图\ref{table:ctor-dtor-flags}。
 
 \begin{longtable}[]{@{}ll@{}}
 \caption{构造函数和析构函数接收的\texttt{flag}}\label{table:ctor-dtor-flags} \\
@@ -1189,7 +1189,7 @@ cache，定义较为复杂，下文会在具体算法流程中详细介绍。\te
 标志，决定 cache 创建 slab 和分配对象的行为。 \\
 \texttt{obj\_size} & \texttt{uint32\_t} & 对齐后的对象大小 \\
 \texttt{obj\_num} & \texttt{uint32\_t} & slab 能容纳的最大对象数量 \\
-\texttt{slab\_size} & \texttt{uint32\_t} & slabmgt 占用的字节数 \\
+\texttt{slabmgt\_size} & \texttt{uint32\_t} & slabmgt 占用的字节数 \\
 \texttt{free\_limit} & \texttt{uint32\_t} & cache
 能容纳的空闲对象的最大数量 \\
 \texttt{slabp\_cache} & \texttt{struct\ kmem\_cache\ *} & 分配 slab
@@ -1219,13 +1219,13 @@ slab 所处的链表 \\
 自身的链表节点 \\
 \end{longtable}
 
-\texttt{struct\ slab}字段见表\ref{table:struct-slab-definition}。
+\texttt{struct\ slabmsgt}字段见表\ref{table:struct-slab-definition}。
 
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.1528}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3472}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.5000}}@{}}
-\caption{\texttt{struct\ slab}定义}\label{table:struct-slab-definition} \\
+\caption{\texttt{struct\ slabmgt}定义}\label{table:struct-slab-definition} \\
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 字段名称
@@ -1243,7 +1243,9 @@ slab 所处的链表 \\
 \texttt{mem} & \texttt{void\ *} & slab 缓存区中第一个对象的地址 \\
 \texttt{inuse} & \texttt{uint32\_t} & slab 中已分配对象数量 \\
 \texttt{list} & \texttt{struct\ linked\_list\_node} & slab 的链表节点 \\
-\texttt{freelist} & \texttt{kmem\_bufctl\_t} & 对象空闲列表 \\
+\texttt{free} & \texttt{kmem\_bufctl\_t} & 指向第一个空闲对象的下标 \\
+\texttt{freelist} & \texttt{kmem\_bufctl\_t[0]} & 空闲对象列表 \\
+
 \end{longtable}
 
 \texttt{struct\ objp\_cache}定义见表\ref{table:struct-objp-cache-definition}。
@@ -1313,7 +1315,7 @@ bufctl 均代表一个对象，空闲列表第 N 个 bufctl 对应缓存区中�
 
 \begin{figure}
 \centering
-\includesvg[width=500pt]{images/freelist-management.drawio.svg}
+\includegraphics[scale=0.8]{images/freelist-management.drawio.pdf}
 \caption{slab 分配器对象空闲列表}
 \end{figure}
 
@@ -1332,7 +1334,7 @@ freelist-\textgreater0-\textgreater2-\textgreater3。
 
 \begin{figure}
 \centering
-\includesvg[width=500pt]{images/alloc-obj-freelist-management.drawio.svg}
+\includegraphics[width=500pt]{images/alloc-obj-freelist-management.drawio.pdf}
 \caption{slab 分配器对象空闲链表分配释放过程}
 \end{figure}
 
@@ -1579,6 +1581,8 @@ slab、磁盘缓冲区等。
 \def\labelenumi{\arabic{enumi}.}
 \item
   前面所述的内存回收功能。
+\item
+  将 slab 和 buddy system 内存分配器的状态通过 proc 文件系统暴露给用户态。
 \item
   OOM(Out Of Memory)
   killer：当内存不足以满足内核内存分配需求时，杀死适当的用户进程并释放内存。
