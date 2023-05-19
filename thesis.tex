@@ -154,7 +154,7 @@ operating system; memory management; buddy system
 
 然而，这些生产环境中实际应用的操作系统过于复杂，以最新（截止 2023 年 5 月）的 Linux v6.2版本为例，Linux 内存管理子系统代码目录 mm 共计 176 个文件、182932余行代码（包括注释和空行）。Linux v6.2 内存管理子系统的代码量统计表见表\ref{table:mm-code-stastic}。
 
-\begin{longtable}[]{@{}llllll@{}}
+\begin{longtable}[htb]{@{}llllll@{}}
 \caption{内存管理子系统代码统计}\label{table:mm-code-stastic} \\
 \toprule\noalign{}
 Language & Files & Lines & Code & Comments & Blanks \\
@@ -337,7 +337,7 @@ Android 代码库中最常见的问题。此类问题造成了超过 60\%
 版本开始，内存安全 bug 就一直是 Android 安全漏洞的首要原因，约占 Android
 安全漏洞的 51\%。
 
-\begin{figure}
+\begin{figure}[htb]
 \centering
 \includegraphics[width=300pt]{images/Android-security-report.png}
 \caption{Android 安全漏洞类型}
@@ -377,7 +377,7 @@ Linux 2.x 版本开始，Linux 内核就将内存安全 bug
 
 Linux 内核的三大类内存安全 bug 检测器比较表见表\ref{table:Linux-memory-security-bug-detector}
 
-\begin{longtable}[]{@{}
+\begin{longtable}[htb]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1237}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1340}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1856}}
@@ -446,7 +446,7 @@ hole}）。内存空洞包括：架构保留的区域，内存映射 IO，ROM �
 
 x86\_64 典型的物理地址空间如图\ref{figure:x86_64-physical-address-space}。
 
-\begin{figure}
+\begin{figure}[htb]
 \centering
 \includesvg{images/x86_64-physical-address-space-latex.svg}
 \caption{典型的 x86\_64 物理地址空间}
@@ -532,7 +532,7 @@ Real mode address space (the first MiB)
 
 尽管物理地址空间如此复杂，但总体上内存仍然是连续的。平坦内存模型将物理地址空间视作由连续的物理页组成的数组，并使用数组\texttt{struct\ page\ mem\_map{[}{]}}跟踪每一页的状态，包括是否已分配等等。
 
-\begin{figure}
+\begin{figure}[htb]
 \centering
 \includesvg{images/FLATMEM.drawio.svg}
 \caption{FLATMEM 内存模型}
@@ -567,7 +567,7 @@ Real mode address space (the first MiB)
 
 在非连续内存模型中，内存被划分为多个节点，每个节点都有自己的\texttt{mem\_map{[}{]}}数组，跟踪本节点内的物理页。
 
-\begin{figure}
+\begin{figure}[htb]
 \centering
 \includesvg{images/DISTCONFIT.drawio.svg}
 \caption{DISTCONFITMEM 内存模型}
@@ -605,7 +605,7 @@ SPARSEMEM。SPARSEMEM
 \texttt{struct\ page}，减少了不必要的内存开销。而且，\texttt{mem\_section}有上线和下线两个状态，对应内存的插入与拔出，通过
 \texttt{struct\ mem\_section} 的动态初始化与销毁实现物理内存热插拔。
 
-\begin{figure}
+\begin{figure}[htb]
 \centering
 \includesvg[width=500pt]{images/SPARSEMEM.drawio.svg}
 \caption{SPARSEMEM 内存模型}
@@ -632,7 +632,7 @@ SPARSEMEM。SPARSEMEM
 SPARSEMEM-EXTREME 将经典 SPARSEMEM
 内存模型的一维\texttt{mem\_map{[}{]}}改成动态分配的\texttt{mem\_section{[}NR\_SECTION\_ROOTS{]}{[}SECTIONS\_PER\_ROOT{]}}，当某个\texttt{mem\_seciton{[}SECTION\_PER\_ROOT{]}}对应的地址空间是内存空洞时，就不需要为其分配\texttt{struct\ mem\_seciton}数组，从而减少了内存消耗。
 
-\begin{figure}
+\begin{figure}[htb]
 \centering
 \includesvg[width=500pt]{images/SPARSEMEM-EXTREME.drawio.svg}
 \caption{SPARSEMEM-EXTREME 内存模型}
@@ -653,7 +653,7 @@ DISCINTIGMEM memory model} 彻底移除了 DISCONFITMEM 内存模型，SPARSEMEM
 教学操作系统没有对内存热插拔的需求，非连续内存模型支持 NUMA
 架构，并且复杂度适中，因此论文描述的系统实现了非连续内存模型。
 
-\begin{figure}
+\begin{figure}[htb]
 \centering
 \includesvg[width=500pt]{images/lzuos-memory-model.drawio.svg}
 \caption{本论文实现的内存模型的逻辑结构}
@@ -663,7 +663,7 @@ DISCINTIGMEM memory model} 彻底移除了 DISCONFITMEM 内存模型，SPARSEMEM
 CPU 的 NUMA
 架构机器，该节点并不包含整个物理地址空间，仅仅包含系统中的物理内存。节点内的物理内存被进一步划分为多个区域\texttt{struct\ zone}，每个区域都有自己独立的内存管理结构\texttt{struct\ page\ *mem\_map}。上图展示了本论文实现的内存模型的逻辑结构。在实际的实现中，节点存储了整个节点内存区域的\texttt{struct\ page\ mem\_map{[}{]}}，每个\texttt{zone}中的\texttt{struct\ page\ mem\_map{[}{]}}只是指向节点的\texttt{mem\_map{[}{]}}中对应区域的\texttt{struct\ page*}指针。物理结构如下图所示。
 
-\begin{figure}
+\begin{figure}[htb]
 \centering
 \includesvg[width=500pt]{images/lzuos-memory-model-implementation.drawio.svg}
 \caption{本论文实现的内存模型的物理结构}
@@ -707,7 +707,7 @@ Buddy Allocator），该算法由 Knowlton 在论文{\cite{knowlton1965fast}} �
 
 伙伴系统有多种实现方式，如基于二叉树的实现通过一个数组形式的完全二叉树管理内存，二叉树的节点标记相应内存块的使用状态，高层节点对应阶数大的块，低层节点对应阶数小的块，在分配和释放中通过这些节点的标记属性来进行块的分离合并。基于二叉树的实现见图\ref{figure:buddy-system-binary-tree-implementation}。
 
-\begin{figure}
+\begin{figure}[htb]
 \centering
 \includegraphics[width=400pt]{images/buddy-system-binary-tree-implementation.jpg}
 \caption{伙伴系统的二叉树实现}
@@ -719,7 +719,7 @@ Buddy Allocator），该算法由 Knowlton 在论文{\cite{knowlton1965fast}} �
 
 本系统为每个节点中的页帧都保留一个对应的\texttt{struct\ page}结构体，该结构体定义如表\ref{table:struct-page-definition}所示。
 
-\begin{longtable}[]{@{}lll@{}}
+\begin{longtable}[htb]{@{}lll@{}}
 \caption{struct\ page\ 定义}\label{table:struct-page-definition} \\
 \toprule\noalign{}
 成员名称 & 数据类型 & 描述 \\
@@ -740,7 +740,7 @@ slab 分配器、是否空闲等等。此外，\texttt{flags}的高 6
 个字节还存储该页所属的\texttt{node} id 和\texttt{zone} id，因此只有 26
 比特用于跟踪页面状态。见图\ref{fig:struct-page-flags}。
 
-\begin{figure}
+\begin{figure}[htb]
 \centering
 \includesvg{images/page-flags.svg}
 \caption{struct page 标志}
@@ -758,7 +758,7 @@ slab 分配器时，\texttt{lru}用于记录该页面所属的 slab 和 cache。
 的空闲内存块链表，\texttt{MAX\_GFP\_ORDER}是伙伴系统支持的最大阶数。每个\texttt{zone}
 独立管理自己的内存，因此每个\texttt{zone}有自己独立的伙伴系统。
 
-\begin{figure}
+\begin{figure}[htb]
 \centering
 \includegraphics[scale=0.6]{images/free-area.drawio.pdf}
 \caption{页分配器物理结构}
@@ -767,7 +767,7 @@ slab 分配器时，\texttt{lru}用于记录该页面所属的 slab 和 cache。
 
 \texttt{struct\ free\_area}字段如表\ref{table:struct-free-area-definition}所示。
 
-\begin{longtable}[]{@{}lll@{}}
+\begin{longtable}[htb]{@{}lll@{}}
 \caption{\texttt{struct\ free\_area} 定义}\label{table:struct-free-area-definition} \\
 \toprule\noalign{}
 字段名称 & 数据类型 & 描述 \\
@@ -789,7 +789,7 @@ page}），首页的\texttt{struct\ page}代表整个空闲块的状态，\textt
 
 伙伴系统提供的 API 见表\ref{table:slab-allocator-api}。
 
-\begin{longtable}[]{@{}
+\begin{longtable}[htb]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.7596}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.2404}}@{}}
 \caption{slab 分配器 API}\label{table:slab-allocator-api} \\
@@ -823,7 +823,7 @@ page}），首页的\texttt{struct\ page}代表整个空闲块的状态，\textt
   调整行为：系统内存不足时，请求内存分配的进程可以休眠，等获取了内存的进程释放内存后再重试。但在中断处理例程中，进程不得休眠，否则迟迟不结束的中断处理例程会导致这期间的所有同类型中断丢失，严重影响系统吞吐量。
 \end{itemize}
 
-\begin{longtable}[]{@{}ll@{}}
+\begin{longtable}[htb]{@{}ll@{}}
 \caption{用于调整行为的\texttt{gfp\_t}标志}\label{table:gfp-action-modifier} \\
 \toprule\noalign{}
 gfp\_t 标志 & 介绍 \\
@@ -842,7 +842,7 @@ gfp\_t 标志 & 介绍 \\
   调整内存分配区域：内存被划分为多个\texttt{node}节点，\texttt{node}节点的内存又被划分为多个\texttt{zone}，用户可以要求页分配器从特定类型的\texttt{zone}分配内存。
 \end{itemize}
 
-\begin{longtable}[]{@{}ll@{}}
+\begin{longtable}[htb]{@{}ll@{}}
 \caption{用于调整内存分配区域的\texttt{gfp\_t}标志}\label{table:gfp-zone-modifier} \\
 \toprule\noalign{}
 gfp\_t 标志 & 介绍 \\
@@ -860,7 +860,7 @@ gfp\_t 标志 & 介绍 \\
   内存分配类型：前两类\texttt{gfp\_t}标志是最底层的\texttt{gfp\_t}标志，需要用户了解页分配器的内部实现才能正确使用。页分配器根据内存分配类型组合前两类\texttt{gfp\_t}提供给用户使用，用户应当优先使用描述内存分配类型的\texttt{gfp\_t}标志。
 \end{itemize}
 
-\begin{longtable}[]{@{}
+\begin{longtable}[htb]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.2400}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.7600}}@{}}
 \caption{用于指定内存分配类型的\texttt{gfp\_t}标志}\label{table:gfp-type-modifier} \\
@@ -888,7 +888,7 @@ API。因此，在伙伴系统提供的这些 API
 之上，提供了用起始地址定位内存块的用户
 API，其他子系统应该优先使用这些用户 API。用户 API 见表\ref{table:slab-allocator-user-api}。
 
-\begin{longtable}[]{@{}
+\begin{longtable}[htb]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.6164}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.3836}}@{}}
 \caption{slab 分配器用户 API}\label{table:slab-allocator-user-api} \\
@@ -932,7 +932,7 @@ list}），回退列表的第一个元素是目标\texttt{zone}，从目标\text
 
 每个\texttt{struct\ node}节点都有自己的回退列表，在系统启动过程初始化。节点有多个\texttt{zone}，因此节点有多个回退列表，见表\ref{table:node-zone-lists}。
 
-\begin{longtable}[]{@{}
+\begin{longtable}[htb]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.1188}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.4257}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.4554}}@{}}
@@ -956,7 +956,7 @@ list}），回退列表的第一个元素是目标\texttt{zone}，从目标\text
 
 回退列表\texttt{struct\ zone\_list}定义见表\ref{table:zone-list-definition}：
 
-\begin{longtable}[]{@{}
+\begin{longtable}[htb]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.0693}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.4752}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.4554}}@{}}
@@ -983,7 +983,7 @@ list}），回退列表的第一个元素是目标\texttt{zone}，从目标\text
 
 页分配算法流程见图\ref{figure:page-alloc-flowchart}。
 
-\begin{figure}
+\begin{figure}[htb]
 \centering
 \includesvg{images/page-alloc-flowchart.drawio.svg}
 \caption{页分配算法流程图}
@@ -992,7 +992,7 @@ list}），回退列表的第一个元素是目标\texttt{zone}，从目标\text
 
 释放内存块流程见图\ref{figure:page-deallocate-flowchart}。
 
-\begin{figure}
+\begin{figure}[htb]
 \centering
 \includesvg{images/page-deallocate-flowchart.drawio.svg}
 \caption{页释放算法流程图}
@@ -1055,7 +1055,7 @@ slab
   分配器从底层内存分配器获取/释放内存视作后端。
 \end{enumerate}
 
-\begin{figure}
+\begin{figure}[htb]
 \centering
 \includesvg{images/slab-allocator-architecture.drawio.svg}
 \caption{slab 分配器架构}
@@ -1088,7 +1088,7 @@ void kmem_cache_destroy(struct kmem_cache *cachep);
 时，指定了对象的构造函数和析构函数，slab
 分配器在为该对象分配内存时调用对象的构造函数，在释放该对象的内存时调用对象的析构函数。对象的构造函数和析构函数原型相同，完整的声明见表\ref{table:obj-ctor-dtor}。
 
-\begin{longtable}[]{@{}
+\begin{longtable}[htb]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.4151}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5849}}@{}}
 \caption{构造函数/析构函数的声明}\label{table:obj-ctor-dtor} \\
@@ -1112,7 +1112,7 @@ void kmem_cache_destroy(struct kmem_cache *cachep);
 
 传递给构造函数和析构函数的\texttt{flags}见图\ref{table:ctor-dtor-flags}。
 
-\begin{longtable}[]{@{}ll@{}}
+\begin{longtable}[htb]{@{}ll@{}}
 \caption{构造函数和析构函数接收的\texttt{flag}}\label{table:ctor-dtor-flags} \\
 \toprule\noalign{}
 标志名 & 介绍 \\
@@ -1159,7 +1159,7 @@ kmem_cache_destroy(inode_cachep);
 
 slab 分配器的结构如下：
 
-\begin{figure}
+\begin{figure}[htb]
 \centering
 \includesvg[width=500pt]{images/kmem_cache-physical-structure.drawio.svg}
 \caption{slab 分配器物理结构}
@@ -1168,7 +1168,7 @@ slab 分配器的结构如下：
 \texttt{struct\ kmem\_cache}描述一个
 cache，定义较为复杂，下文会在具体算法流程中详细介绍。\texttt{struct\ kmem\_cache}字段见表\ref{table:kmem_cache-definition}
 
-\begin{longtable}[]{@{}
+\begin{longtable}[htb]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.1197}}
   >{\centering\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.4615}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.4188}}@{}}
@@ -1221,7 +1221,7 @@ slab 所处的链表 \\
 
 \texttt{struct\ slabmsgt}字段见表\ref{table:struct-slab-definition}。
 
-\begin{longtable}[]{@{}
+\begin{longtable}[htb]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.1528}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3472}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.5000}}@{}}
@@ -1250,7 +1250,7 @@ slab 所处的链表 \\
 
 \texttt{struct\ objp\_cache}定义见表\ref{table:struct-objp-cache-definition}。
 
-\begin{longtable}[]{@{}
+\begin{longtable}[htb]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.2031}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.1406}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.6562}}@{}}
@@ -1282,7 +1282,7 @@ slab 分配器以 slab 为内存管理基本单位。slab 包含一段连续的�
 slab buffer。slab 缓存区由页分配器分配，因此其大小为 \(2^N\) 页。slab
 缓存区布局如下：
 
-\begin{figure}
+\begin{figure}[htb]
 \centering
 \includesvg[width=500pt]{images/on-slab-and-off-slab.drawio.svg}
 \caption{slab 管理结构}
@@ -1313,7 +1313,7 @@ bufctl 均代表一个对象，空闲列表第 N 个 bufctl 对应缓存区中�
 空闲列表的结构如下图所示，虚线箭头表示 bufctl
 和对象的对应关系，实线箭头表示空闲列表元素的链接关系。空白块表示该对象未分配，灰色块表示该对象已分配。
 
-\begin{figure}
+\begin{figure}[htb]
 \centering
 \includegraphics[scale=0.8]{images/freelist-management.drawio.pdf}
 \caption{slab 分配器对象空闲列表}
@@ -1332,7 +1332,7 @@ freelist-\textgreater1-\textgreater2-\textgreater3；再次分配后空闲列表
 freelist-\textgreater2-\textgreater3；释放对象 0 后，空闲列表为
 freelist-\textgreater0-\textgreater2-\textgreater3。
 
-\begin{figure}
+\begin{figure}[htb]
 \centering
 \includegraphics[width=500pt]{images/alloc-obj-freelist-management.drawio.pdf}
 \caption{slab 分配器对象空闲链表分配释放过程}
@@ -1347,7 +1347,7 @@ slab allocator
 直接从\texttt{objp\_cache}摘取一个对象指针并返回即可，从而减少了修改底层
 slab 空闲列表的次数，提高了内存分配性能。
 
-\begin{figure}
+\begin{figure}[htb]
 \centering
 \includesvg[scale=0.6]{images/alloc-obj-simple-flowchart.drawio.svg}
 \caption{objp\_cache 缓存}
@@ -1375,7 +1375,7 @@ slab 空闲列表的次数，提高了内存分配性能。
 
 对象分配流程图见图\ref{figure:slab-allocator-obj-alloc-flow-chart}。
 
-\begin{figure}
+\begin{figure}[htb]
 \centering
 \includegraphics[width=500pt]{images/alloc-obj-flow-chart.drawio-cropped.pdf}
 \caption{slab 分配器对象分配流程图}
@@ -1441,7 +1441,7 @@ slabmgt，调用构造函数构造对象，并将新创建的 slab
 slab 对象上的 use-after-free 检测。在对象两侧分别设置 64 字节的
 redzone，redzone 算在 slab 对象中。增加调试功能后，slab 对象的布局见图\ref{figure:slab-debug-layout}。
 
-\begin{figure}
+\begin{figure}[htb]
 \centering
 \includesvg[scale=0.6]{images/slab-debug-layout.drawio.svg}
 \caption{slab 对象布局}
@@ -1450,9 +1450,9 @@ redzone，redzone 算在 slab 对象中。增加调试功能后，slab 对象的
 
 将 slab
 对象的状态分为活跃状态与非活跃状态，对象在分配后释放前的时间视作处于活跃状态，分配前或释放后视作处于非活跃状态。这两个状态下红区和实际的
-slab 对象必须为以下值，否则视作发生了内存安全 bug。图示见图\ref{figure:slab-obj-debug-mark}。
+slab 对象的值必须如图\ref{figure:slab-obj-debug-mark}所示，否则视作发生了内存安全 bug。
 
-\begin{figure}
+\begin{figure}[htb]
 \centering
 \includesvg[scale=0.6]{images/slab-debug-status.drawio.svg}
 \caption{slab 对象调试标记}
