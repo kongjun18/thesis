@@ -661,12 +661,13 @@ DISCINTIGMEM memory model} 彻底移除了 DISCONFITMEM 内存模型，SPARSEMEM
 
 目前本论文描述的操作系统是还不支持对称多处理器，因此将系统视为只有一个节点和一个
 CPU 的 NUMA
-架构机器，该节点并不包含整个物理地址空间，仅仅包含系统中的物理内存。节点内的物理内存被进一步划分为多个区域\texttt{struct\ zone}，每个区域都有自己独立的内存管理结构\texttt{struct\ page\ *mem\_map}。上图展示了本论文实现的内存模型的逻辑结构。在实际的实现中，节点存储了整个节点内存区域的\texttt{struct\ page\ mem\_map{[}{]}}，每个\texttt{zone}中的\texttt{struct\ page\ mem\_map{[}{]}}只是指向节点的\texttt{mem\_map{[}{]}}中对应区域的\texttt{struct\ page*}指针。物理结构如下图所示。
+架构机器，该节点并不包含整个物理地址空间，仅仅包含系统中的物理内存。节点内的物理内存被进一步划分为多个区域\texttt{struct\ zone}，每个区域都有自己独立的内存管理结构\texttt{struct\ page\ *mem\_map}。上图展示了本论文实现的内存模型的逻辑结构。在实际的实现中，节点存储了整个节点内存区域的\texttt{struct\ page\ mem\_map{[}{]}}，每个\texttt{zone}中的\texttt{struct\ page\ mem\_map{[}{]}}只是指向节点的\texttt{mem\_map{[}{]}}中对应区域的\texttt{struct\ page*}指针。物理结构如图\ref{figure:memory-model-physical-structure}所示。
 
-\begin{figure}[htb]
+\begin{figure}[H]
 \centering
 \includesvg[width=500pt]{images/lzuos-memory-model-implementation.drawio.svg}
 \caption{本论文实现的内存模型的物理结构}
+\label{figure:memory-model-physical-structure}
 \end{figure}
 
 划分\texttt{zone}的依据是系统中不同区域的物理内存特性不同。例如，x86\_64
@@ -682,7 +683,7 @@ NUMA 配置探测，初始化多个节点即可。
 
 本章所有功能实现代码托管在 GitHub 仓库。
 
-仓库链接：\href{https://github.com/RvOSLab/lzu_oslab}{https://github.com/RvOSLab/lzu\_oslab}。
+仓库链接：\href{https://github.com/kongjun18/lzu_oslab}{https://github.com/kongjun18/lzu\_oslab}。
 
 \chapter{页分配器}
 
@@ -707,7 +708,7 @@ Buddy Allocator），该算法由 Knowlton 在论文{\cite{knowlton1965fast}} �
 
 伙伴系统有多种实现方式，如基于二叉树的实现通过一个数组形式的完全二叉树管理内存，二叉树的节点标记相应内存块的使用状态，高层节点对应阶数大的块，低层节点对应阶数小的块，在分配和释放中通过这些节点的标记属性来进行块的分离合并。基于二叉树的实现见图\ref{figure:buddy-system-binary-tree-implementation}。
 
-\begin{figure}[htb]
+\begin{figure}[H]
 \centering
 \includegraphics[width=400pt]{images/buddy-system-binary-tree-implementation.jpg}
 \caption{伙伴系统的二叉树实现}
@@ -740,7 +741,7 @@ slab 分配器、是否空闲等等。此外，\texttt{flags}的高 6
 个字节还存储该页所属的\texttt{node} id 和\texttt{zone} id，因此只有 26
 比特用于跟踪页面状态。见图\ref{fig:struct-page-flags}。
 
-\begin{figure}[htb]
+\begin{figure}[H]
 \centering
 \includesvg{images/page-flags.svg}
 \caption{struct page 标志}
@@ -983,18 +984,18 @@ list}），回退列表的第一个元素是目标\texttt{zone}，从目标\text
 
 页分配算法流程见图\ref{figure:page-alloc-flowchart}。
 
-\begin{figure}[htb]
+\begin{figure}[H]
 \centering
-\includesvg{images/page-alloc-flowchart.drawio.svg}
+\includegraphics{images/page-alloc-flowchart.drawio.pdf}
 \caption{页分配算法流程图}
 \label{figure:page-alloc-flowchart}
 \end{figure}
 
 释放内存块流程见图\ref{figure:page-deallocate-flowchart}。
 
-\begin{figure}[htb]
+\begin{figure}[H]
 \centering
-\includesvg{images/page-deallocate-flowchart.drawio.svg}
+\includegraphics{images/page-deallocate-flowchart.drawio.pdf}
 \caption{页释放算法流程图}
 \label{figure:page-deallocate-flowchart}
 \end{figure}
@@ -1024,7 +1025,7 @@ jemalloc
 
 本章所有功能实现代码托管在 GitHub 仓库。
 
-仓库链接：\href{https://github.com/RvOSLab/lzu_oslab}{https://github.com/RvOSLab/lzu\_oslab}。
+仓库链接：\href{https://github.com/kongjun18/lzu_oslab}{https://github.com/kongjun18/lzu\_oslab}。
 
 \chapter{slab 分配器}
 
@@ -1159,7 +1160,7 @@ kmem_cache_destroy(inode_cachep);
 
 slab 分配器的结构如下：
 
-\begin{figure}[htb]
+\begin{figure}[H]
 \centering
 \includesvg[width=500pt]{images/kmem_cache-physical-structure.drawio.svg}
 \caption{slab 分配器物理结构}
@@ -1332,7 +1333,7 @@ freelist-\textgreater1-\textgreater2-\textgreater3；再次分配后空闲列表
 freelist-\textgreater2-\textgreater3；释放对象 0 后，空闲列表为
 freelist-\textgreater0-\textgreater2-\textgreater3。
 
-\begin{figure}[htb]
+\begin{figure}[H]
 \centering
 \includegraphics[width=500pt]{images/alloc-obj-freelist-management.drawio.pdf}
 \caption{slab 分配器对象空闲链表分配释放过程}
@@ -1375,7 +1376,7 @@ slab 空闲列表的次数，提高了内存分配性能。
 
 对象分配流程图见图\ref{figure:slab-allocator-obj-alloc-flow-chart}。
 
-\begin{figure}[htb]
+\begin{figure}[H]
 \centering
 \includegraphics[width=500pt]{images/alloc-obj-flow-chart.drawio-cropped.pdf}
 \caption{slab 分配器对象分配流程图}
@@ -1450,9 +1451,9 @@ redzone，redzone 算在 slab 对象中。增加调试功能后，slab 对象的
 
 将 slab
 对象的状态分为活跃状态与非活跃状态，对象在分配后释放前的时间视作处于活跃状态，分配前或释放后视作处于非活跃状态。这两个状态下红区和实际的
-slab 对象的值必须如图\ref{figure:slab-obj-debug-mark}所示，否则视作发生了内存安全 bug。
+slab 对象的值必须如图\ref{figure:slab-obj-debug-mark}所示，否则发生了内存安全 bug。
 
-\begin{figure}[htb]
+\begin{figure}[H]
 \centering
 \includesvg[scale=0.6]{images/slab-debug-status.drawio.svg}
 \caption{slab 对象调试标记}
@@ -1562,7 +1563,7 @@ slab 可容纳 100 个对象的 cache，但却只分配了 2 个对象，剩下 
 
 本章所有功能实现代码托管在 GitHub 仓库。
 
-仓库链接：\href{https://github.com/RvOSLab/lzu_oslab}{https://github.com/RvOSLab/lzu\_oslab}。
+仓库链接：\href{https://github.com/kongjun18/lzu_oslab}{https://github.com/kongjun18/lzu\_oslab}。
 
 \chapter{结论与展望}
 
