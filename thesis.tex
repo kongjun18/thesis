@@ -414,17 +414,13 @@ API 及其实现，最后分析内存碎片情况。
 
 \chapter{内存模型}
 
-\emph{内存模型}（\emph{memory
-model}）指操作系统对物理内存的管理方式和组织结构。
-
-Linux
+内存模型指操作系统对物理内存的管理方式和组织结构。Linux
 内核的内存模型经历了三个阶段：平坦内存模型、非连续内存模型和稀疏内存模型。
 
 
 \section{平坦内存模型}
 
-在大多数处理器架构中，物理内存仅仅是物理地址空间的一部分，物理地址空间通常是不连续的，其中不可用的部分称为\emph{内存空洞}（\emph{memory
-hole}）。内存空洞包括：架构保留的区域，内存映射 IO，ROM 等等。
+在大多数处理器架构中，物理内存仅仅是物理地址空间的一部分，物理地址空间通常是不连续的，其中不可用的部分称为内存空洞。内存空洞包括：架构保留的区域，内存映射 IO，ROM 等等。
 
 x86\_64 典型的物理地址空间如图\ref{figure:x86_64-physical-address-space}。
 
@@ -436,7 +432,7 @@ x86\_64 典型的物理地址空间如图\ref{figure:x86_64-physical-address-spa
 \end{figure}
 
 x86\_64 架构中，前 1MB
-物理地址空间称为\emph{实模式地址空间}，实模式地址空间布局如表\ref{table:x86-real-mode-address-space}所示。
+物理地址空间称为实模式地址空间，实模式地址空间布局如表\ref{table:x86-real-mode-address-space}所示。
 
 \begin{table}[!ht]
 \caption{x86\ 实模式地址空间}
@@ -662,8 +658,7 @@ NUMA 配置探测，初始化多个节点即可。
 
 \chapter{页分配器}
 
-\emph{页分配器}（\emph{page
-allocator}）指按页管理系统内存的分配与释放的内存分配器，是操作系统最基础的组件。本论文的页分配器使用的主要算法是\emph{伙伴系统}（\emph{Binary Buddy Allocator}），该算法由 Knowlton 在论文{\cite{knowlton1965fast}} 提出并由 Knuth 在 {\cite{knuth1968art}} 进一步描述。与其他内存分配算法相比，伙伴系统有以下优点：
+页分配器（page allocator）指按页管理系统内存的分配与释放的内存分配器，是操作系统最基础的组件。本论文的页分配器使用的主要算法是伙伴系统（Binary Buddy Allocator），该算法由 Knowlton 在论文{\cite{knowlton1965fast}} 提出并由 Knuth 在 {\cite{knuth1968art}} 进一步描述。与其他内存分配算法相比，伙伴系统有以下优点：
 
 \begin{itemize}
 \item
@@ -677,7 +672,7 @@ allocator}）指按页管理系统内存的分配与释放的内存分配器，�
 伙伴系统是一种将普通的二次幂分配器与空闲缓冲区合并
 相结合的分配方案，其背后的基本概念非常简单。
 内存被划分成内存块，每个内存块由\(2^N\)个连续的物理页组成，其中\texttt{N}
-称为该内存块的\emph{阶数}（\emph{order}）。分配时如果没有所需大小的内存块，则将一个更大的内存块平分成两半，平分出来的内存块彼此互为伙伴.其中一半用于分配，另一半空闲。内存块会根据需要连续平分，直到平分出所需大小的内存块。稍后释放一个内存块时，将检查它的伙伴的分配状态，如果它是空闲的，则将两者合并。合并得到新的空闲内存块后，再去检测它的伙伴，继续上述合并过程，直到无法合并。
+称为该内存块的阶数（order）。分配时如果没有所需大小的内存块，则将一个更大的内存块平分成两半，平分出来的内存块彼此互为伙伴.其中一半用于分配，另一半空闲。内存块会根据需要连续平分，直到平分出所需大小的内存块。稍后释放一个内存块时，将检查它的伙伴的分配状态，如果它是空闲的，则将两者合并。合并得到新的空闲内存块后，再去检测它的伙伴，继续上述合并过程，直到无法合并。
 
 伙伴系统有多种实现方式，主要有基于二叉树的实现和分离存储的实现。基于二叉树的实现通过一个数组形式的完全二叉树管理内存，二叉树的节点标记相应内存块的使用状态，高层节点对应阶数大的块，低层节点对应阶数小的块，在分配和释放中通过这些节点的标记属性来进行块的分离合并。基于二叉树的实现见图\ref{figure:buddy-system-binary-tree-implementation}。
 
@@ -719,8 +714,7 @@ allocator}）指按页管理系统内存的分配与释放的内存分配器，�
 \end{figure}
 
 其余字段根据\texttt{flags}标示的状态有不同的含义。\texttt{private}状态存储页面相关的私有数据，目前仅用于页面被伙伴系统管理时标示内存块的阶数。\texttt{lru}是
-\emph{Last Recently Used}
-的简称，是一个链表节点，可用于页面置换；当页面空闲且被伙伴系统管理时，它用于标示下一块空闲内存块；当页面被分配给
+Last Recently Used 的简称，是一个链表节点，可用于页面置换；当页面空闲且被伙伴系统管理时，它用于标示下一块空闲内存块；当页面被分配给
 slab 分配器时，\texttt{lru}用于记录该页面所属的 slab 和 cache。
 
 本系统通过分离存储实现伙伴系统。如图\ref{figure:page-allocator-structure}所示，维护一个元素指向不同阶数的空闲内存块链表的数组\texttt{struct\ free\_area\ free\_zreas{[}MAX\_GFP\_ORDER+1{]}}。
@@ -750,9 +744,7 @@ slab 分配器时，\texttt{lru}用于记录该页面所属的 slab 和 cache。
 \texttt{nr\_free} & \texttt{int32\_t} & 空闲列表包含的空闲块数量 \\
 \end{longtable}
 
-空闲块的第一页称为\emph{首页}（\emph{first
-page}），其余页面均称为\emph{尾页}（\emph{tail
-page}）。首页的\texttt{struct\ page}代表整个空闲块的状态，\texttt{free\_list}空闲列表指向第一个空闲块首页的\texttt{lru}链表节点，空闲块通过首页\texttt{struct\ page}的\texttt{lru}链表节点链接起来。
+空闲块的第一页称为首页，其余页面均称为尾页。首页的\texttt{struct\ page}代表整个空闲块的状态，\texttt{free\_list}空闲列表指向第一个空闲块首页的\texttt{lru}链表节点，空闲块通过首页\texttt{struct\ page}的\texttt{lru}链表节点链接起来。
 
 
 \section{接口设计}
@@ -893,7 +885,7 @@ API。因此，页分配器还在上述底层 API 的基础上，提供了用起
   优先从目标类型的\texttt{zone}分配：\texttt{ZONE\_NORMAL}区域优先于\texttt{ZONE\_DMA}区域。
 \end{enumerate}
 
-系统中所有的\texttt{zone}构成了一个\emph{回退列表}（\emph{fallback list}），回退列表的第一个元素是目标\texttt{zone}。从目标\texttt{zone}分配内存失败，则回退到下一个优先级更低的\texttt{zone}分配内存。尝试完整个回退列表的\texttt{zone}后仍然无法成功分配内存才算失败。例如，用户请求从\texttt{ZONE\_NORMAL}区分配
+系统中所有的\texttt{zone}构成了一个回退列表（fallback list），回退列表的第一个元素是目标\texttt{zone}。从目标\texttt{zone}分配内存失败，则回退到下一个优先级更低的\texttt{zone}分配内存。尝试完整个回退列表的\texttt{zone}后仍然无法成功分配内存才算失败。例如，用户请求从\texttt{ZONE\_NORMAL}区分配
 8 页内存，页分配器会优先尝试本地\texttt{ZONE\_NORMAL}区，失败则尝试本地\texttt{ZONE\_DMA}区，仍然失败再去其他节点重复以上过程。
 
 每个\texttt{struct\ node}节点都有自己的回退列表，在系统启动过程初始化。节点有多个\texttt{zone}，因此节点有多个回退列表，定义见表\ref{table:node-zone-lists}。
@@ -996,8 +988,7 @@ slab 分配器的对象缓存策略不仅对有状态内存（对象）有用，
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \item
-  缓存利用率高：slab 分配器通过\emph{slab 着色}（\emph{slab
-  coloring})提高了系统总体的缓存利用率和总线平衡程度。
+  缓存利用率高：slab 分配器通过slab 着色（slab coloring)提高了系统总体的缓存利用率和总线平衡程度。
 \item
   内存碎片小且可调节：slab 分配器无外碎片，且对于容量为 N 个对象的 slab 分配器，内碎片比例不超过 1/N。
 \item
@@ -1343,15 +1334,14 @@ cache 中的每个 slab 都是相同的，对象大小、对象数量和 slab
   将此数据暴露给用户态。用户态内存泄露检测器周期性的扫描
   /dev/kmem，如果发现某块内存在很久之前分配，但目前仍未被释放，则这块内存很可能发生了内存泄露。这种方案只能报告可能发生的内存泄露，无法确定是否真的发生内存泄露。
 \item
-  缓存区溢出检测：在对象前后分别增加一小块区域，这块区域称为\emph{红区}（\emph{redzone}），通过检测红区判断是否发生缓冲区溢出。后文详细介绍红区检测算法。
+  缓存区溢出检测：在对象前后分别增加一小块区域，这块区域称为红区（redzone），通过检测红区判断是否发生缓冲区溢出。后文详细介绍红区检测算法。
 \item
   use-after-free 检测：SunOS 5.4
   通过标记对象实现在分配对象时检测到该对象上的
   use-after-free，后文详细介绍此算法。还可以通过两个 slab
   分配器的两个拓展运行模式立即检测到 slab 区域和对象上的
   use-after-free。SunOS 5.4
-  有一个\emph{同步取消映射模式}（\emph{synchronous-unmapping
-  mode}），在此模式下销毁 slab
+  有一个同步取消映射模式（synchronous-unmapping mode），在此模式下销毁 slab
   不仅释放内存，还取消该内存区域的页表映射，下次访问该 slab
   内存区域将导致页错误异常，从而实现 use-after-free
   的立即检测。此外，SunOS 5.4 同步取消映射模式还可以用于 slab 对象，每个对象都被设置成页大小，以浪费物理内存为代价实现 slab 对象上的 use-after-free 立即检测。
@@ -1427,8 +1417,7 @@ slab
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \item
-  对象默认对齐到缓存行大小：对齐到缓存行大小可以确保小于缓存行大小的对象存放在不同缓存行，从而避免\emph{伪共享}（\emph{false
-  share}）。
+  对象默认对齐到缓存行大小：对齐到缓存行大小可以确保小于缓存行大小的对象存放在不同缓存行，从而避免伪共享（false share）。
 \item
   \texttt{SLAB\_HW\_CACHE\_ALIGN}标志尝试将小于缓存行大小的对象存放于同一缓存行：如果用户明确清除
   slab
@@ -1488,8 +1477,7 @@ slab 可容纳 100 个对象的 cache，但却只分配了 2 个对象，剩下 
 slab
 分配器的设计与实现。
 
-本文描述的内存分配器虽然完整的实现了内存分配释放功能，但还存在一些缺陷。最主要的是没有实现\emph{内存回收}（\emph{memory
-reclaim}），当空闲内存紧张时，扫描系统内存并回收可回收的内存，如空闲的 slab、磁盘缓冲区等。
+本文描述的内存分配器虽然完整的实现了内存分配释放功能，但还存在一些缺陷。最主要的是没有实现内存回收（memory reclaim），当空闲内存紧张时，扫描系统内存并回收可回收的内存，如空闲的 slab、磁盘缓冲区等。
 
 尽管对于教学操作系统，本论文实现的物理内存管理模块已经足够丰富，但仍然可以畅想未来其他同学在其上添加以下功能：
 
