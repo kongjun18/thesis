@@ -109,13 +109,17 @@
 \ZhAbstract{
 在计算机学科的教学中，工程实践是必不可少的一环。内存分配器负责分配和回收内存，是操作系统内核内存管理子系统的核心组件，被其他所有子系统依赖。内存分配器的设计和实现直接影响系统的整体性能，因此在操作系统中具有重要地位。
 
-本论文概述了 Linux 内核物理内存分配器的发展现状，分析了 Linux 内核的内存模型演化进程，完成了基于 RISC-V 指令集的教学操作系统中物理内存管理子系统的设计与实现，包括物理内存探测、页分配器、slab 分配器等。此外，还分析了内存分配器内存碎片情况。
+本论文概述了 Linux 内核物理内存分配器的发展现状，分析了 Linux 内核的内存模型演化进程。论文参考了 Linux 内核和 jemalloc 等著名内存分配器的设计，采用伙伴系统结合 slab 分配器的设计方案，最终完成了一个设计简洁、支持 NUMA(Non-Uniform Memory Access)架构、支持任意大小内存分配并且可用于操作系统教学的内存分配器。此外，还分析了内存分配器内存碎片情况。
+
+论文最终完成了包括物理内存探测、页分配器和slab 分配器和基本的内存安全错误检测的代码实现。相关测试表明，论文设计并实现的内存管理各项功能可以正常运行。
 }{操作系统；内存分配器；内存管理；伙伴系统}
 
 %英文摘要
-\EnAbstract {In the teaching of computer science, engineering practice is an essential part. The memory allocator is responsible for allocating and reclaiming memory. It is the core component of the memory management subsystem of the operating system kernel and is relied upon by all other subsystems. The design and implementation of the memory allocator directly affects the overall performance of the system, so the memory allocator plays an important role in the operating system.
+\EnAbstract {In the teaching of computer science, engineering practice is an essential part. The memory allocator is responsible for allocating and reclaiming memory. It is the core component of the memory management subsystem of the operating system kernel and is relied upon by all other subsystems. The design and implementation of the memory allocator directly affects the overall performance of the system, so it plays an important role in the operating system.
 
-This paper summarizes the development status of the Linux kernel physical memory allocator, analyzes the evolution process of the Linux kernel memory model, and completes the design and implementation of the physical memory management subsystem in the teaching operating system based on the RISC-V instruction set, including the physical memory Probes, page allocators, slab allocators, etc. In addition, the memory fragmentation of the memory allocator is analyzed and an improvement method is proposed.
+This paper summarizes the development status of the Linux kernel physical memory allocator, and analyzes the evolution process of the Linux kernel memory model. The paper refers to the design of famous memory allocators such as Linux kernel and jemalloc, adopts the design scheme of partner system combined with slab allocator, and finally completes a simple design, supports NUMA (Non-Uniform Memory Access) architecture, supports memory allocation of any size and can be used A memory allocator for operating system teaching. In addition, the memory fragmentation of the memory allocator is analyzed.
+
+The thesis finally completed the code implementation including physical memory detection, page allocator and slab allocator and basic memory safety bug detection. Relevant tests show that the memory management functions designed and implemented in this paper can run normally.
 }
 {
 operating system; memory management; buddy system
@@ -152,7 +156,7 @@ operating system; memory management; buddy system
 
 随着操作系统理论的不断发展和完善，以及操作系统实际需求的不断变更迭代，各大操作系统均不同程度的引入了各种先进的算法实现和优秀的架构设计。对这些算法和架构的学习有利于加深对操作系统底层原理的理解，提高动手实践能力。这就要求在实验教学过程中必须深入到操作系统的具体实现细节中，通过理论与实践结合的方式进行教学。
 
-然而，这些生产环境中实际应用的操作系统过于复杂，以最新（截止 2023 年 5 月）的 Linux v6.2版本为例，Linux 内存管理子系统代码目录 mm 共计 176 个文件、182932余行代码（包括注释和空行）。Linux v6.2 内存管理子系统的代码量统计表见表\ref{table:mm-code-stastic}。
+然而，这些生产环境中实际应用的操作系统过于复杂，以最新（截止 2023 年 5 月）的 Linux v6.2版本为例，Linux 内存管理子系统代码目录 mm 共计 176 个文件、182932余行代码（包括注释和空行）。Linux v6.2 内存管理子系统的代码量如表\ref{table:mm-code-stastic}所示。
 
 \begin{longtable}[htb]{@{}llllll@{}}
 \caption{内存管理子系统代码统计}\label{table:mm-code-stastic} \\
@@ -242,8 +246,8 @@ NUMA 架构、内存热插拔和多核处理器等。
   NUMA 架构
 \end{enumerate}
 
-在一个 NUMA(Non-uniform memory access) 架构中，CPU 和内存被划分为多个节点，每个节点通常有多个 CPU
-和多个内存控制器，节点通过高速互联网络连接在一起。每个 CPU
+在一个 NUMA(Non-Uniform Memory Access) 架构中，CPU 和内存被划分为多个节点，每个节点通常有多个 CPU
+和多个内存控制器，节点通过高速互联网络连接在一起\upcite{drepper2007every}。每个 CPU
 都有本地内存和远程内存，本地内存直接连接到本地
 CPU，而远程内存需要通过互联网络连接到远程
 CPU。这样访问本地内存的延迟比访问远程内存的延迟要小。因此，在 NUMA
@@ -312,10 +316,8 @@ NUMA 架构下不仅 CPU
 \end{enumerate}
 
 内存安全 bug
-会对内核稳定性产生负面影响。\href{https://source.android.google.cn/docs/security/memory-safety?hl=zh-cn}{AOSP
-安全性文档}指出，内存安全 bug 和以原生编程语言处理内存时遇到的错误是
-Android 代码库中最常见的问题。此类问题造成了超过 60\%
-的高严重程度安全漏洞，并造成了数百万次用户可见的崩溃。从第一个 Android
+会对内核稳定性产生负面影响。AOSP
+安全性文档指出，内存安全 bug 和以原生编程语言处理内存时遇到的错误是 Android 代码库中最常见的问题。此类问题造成了超过 60\% 的高严重程度安全漏洞，并造成了数百万次用户可见的崩溃\upcite{AndroidAndroidOpenSourceProject-2022-09-19}。从第一个 Android
 版本开始，内存安全 bug 就一直是 Android 安全漏洞的首要原因，约占 Android
 安全漏洞的 51\%。
 
@@ -330,7 +332,7 @@ Android 代码库中最常见的问题。此类问题造成了超过 60\%
 bug 的工具。
 
 Linux 内核于 6.1 版本开始支持使用 Rust
-语言编写驱动程序，试图通过引入内存安全型编程语言环境内存安全问题。此外，从
+语言编写驱动程序\upcite{Linux61LWNnet-2023-05-25}，试图通过引入内存安全型编程语言环境内存安全问题。此外，从
 Linux 2.x 版本开始，Linux 内核就将内存安全 bug
 检测作为内存分配器的重要功能。目前，Linux
 内核中的几乎所有类型的内存分配都有对应的内存安全 bug
@@ -342,7 +344,7 @@ Linux 2.x 版本开始，Linux 内核就将内存安全 bug
   内存分配器内置的调试功能：内存分配器在分配内存和释放时，检测是否发生内存安全
   bug。这种方式无法在发生内存安全 bug 时立刻报告错误，但性能损耗比较小。
 \item
-  KASAN(The Kernel Address Sanitizer)：使用 shadow memory
+  KASAN(The Kernel Address Sanitizer)\upcite{TheKernelAddressSanitizerKASANTheLinuxKerneldocumentation-2023-04-24}：使用 shadow memory
   记录所有内存的使用情况（正常/异常），即使用 1 字节记录 8
   个字节的使用情况；通过编译器的协助，在内核代码的每一条内存访问指令前插入
   KASAN 检测指令，检测是否出现内存安全 bug。KASAN
@@ -351,13 +353,13 @@ Linux 2.x 版本开始，Linux 内核就将内存安全 bug
   KASAN 不能用于生产环境，但可以及时报告内存错误，是 Linux
   内核中功能最强的内存安全 bug 检测器。
 \item
-  KFENCE(Kernel Electric-Fence)：在 Linux 5.12 版本引入，仅检测通过
+  KFENCE(Kernel Electric-Fence)：在 Linux 5.12 版本引入\upcite{KernelElectricFenceKFENCETheLinuxKerneldocumentation-2023-04-24}，仅检测通过
   KFENCE 内存池分配的内存（kfence 对象），而且是周期性采样。KFENCE
   性能开销比较低，可以用于生产环境，因此 Linux 5.12 版本后默认开启
   KFENCE。
 \end{enumerate}
 
-Linux 内核的三大类内存安全 bug 检测器比较表见表\ref{table:Linux-memory-security-bug-detector}
+Linux 内核的三大类内存安全 bug 检测器比较如表\ref{table:Linux-memory-security-bug-detector}所示。
 
 \begin{longtable}[htb]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1237}}
@@ -415,7 +417,7 @@ API 及其实现，最后分析内存碎片情况。
 \chapter{内存模型}
 
 内存模型指操作系统对物理内存的管理方式和组织结构。Linux
-内核的内存模型经历了三个阶段：平坦内存模型、非连续内存模型和稀疏内存模型。
+内核的内存模型经历了三个阶段：平坦内存模型、非连续内存模型和稀疏内存模型\upcite{MemorytheflatthediscontiguousandthesparseLWNnet-2021-05-21}。
 
 
 \section{平坦内存模型}
@@ -426,13 +428,13 @@ x86\_64 典型的物理地址空间如图\ref{figure:x86_64-physical-address-spa
 
 \begin{figure}[htb]
 \centering
-\includesvg{images/x86_64-physical-address-space-latex.svg}
+\includesvg[scale=0.6]{images/x86_64-physical-address-space-latex.svg}
 \caption{典型的 x86\_64 物理地址空间}
 \label{figure:x86_64-physical-address-space}
 \end{figure}
 
 x86\_64 架构中，前 1MB
-物理地址空间称为实模式地址空间，实模式地址空间布局如表\ref{table:x86-real-mode-address-space}所示。
+物理地址空间称为实模式地址空间\upcite{DetectingMemoryx86OSDevWiki-2022-09-16}，实模式地址空间布局如表\ref{table:x86-real-mode-address-space}所示。
 
 \begin{table}[!ht]
 \caption{x86\ 实模式地址空间}
@@ -565,8 +567,7 @@ NUMA 架构的真实布局。论文后续部分会详细介绍。
 
 非连续内存模型尽管使得 Linux 成功支持 NUMA 架构，但非连续内存模型实际上只是连续物理内存的变体，每个节点内部都是连续内存模型。内存热插拔场景下的物理内存过于稀疏，粗粒度的非连续内存模型无法支持如此稀疏的物理内存布局。
 
-因此，Linux 于 2005 年引入了原始的稀疏内存模型，称为
-SPARSEMEM。SPARSEMEM 模型把粗粒度的节点，变成了更细粒度的\texttt{struct\ mem\_section}。每个\texttt{mem\_seciton}都有自己的内存管理结构\texttt{mem\_map{[}{]}}。一个\texttt{mem\_section}管理\(2^{SECTION\_SIZE\_BIT}\)字节物理内存，通常\texttt{SECTION\_SIZE\_BIT}
+因此，Linux 于 2005 年引入了原始的稀疏内存模型，称为 SPARSEMEM\upcite{sparsememmemorymodelLWNnet-2005-05-06}。SPARSEMEM 模型把粗粒度的节点，变成了更细粒度的\texttt{struct\ mem\_section}。每个\texttt{mem\_seciton}都有自己的内存管理结构\texttt{mem\_map{[}{]}}。一个\texttt{mem\_section}管理\(2^{SECTION\_SIZE\_BIT}\)字节物理内存，通常\texttt{SECTION\_SIZE\_BIT}
 定义为 27，即一个\texttt{mem\_section} 管理 128MB
 内存。整个系统的内存管理结构被视作一个\texttt{mem\_section}数组\footnote{实际上是一个 NR\_SECTION\_ROOTS * SECTION\_PER\_ROOT 大小的二维数组，因为 SECTION\_PER\_ROOT 定义为 1，因此这里说是一维数组。}。
 
@@ -596,7 +597,7 @@ SPARSEMEM 内存模型将 FLATMEM 模型中 \texttt{struct\ page}
 \end{enumerate}
 
 这两个问题阻碍着 SPARSEMEM 完全替代 DISCONTIGMEM
-内存模型，这两个问题已经分别通过 2005 年引入的 SPARSEMEM-EXTREME 拓展和
+内存模型，这两个问题已经分别通过 2005 年引入的 SPARSEMEM-EXTREME 拓展\upcite{sparsememextremeimplementationLWNnet-2005-08-12}和
 2007 年引入的 SPARSEMEM-VMEMMAP 拓展解决了。
 
 SPARSEMEM-EXTREME 将经典 SPARSEMEM
@@ -604,7 +605,7 @@ SPARSEMEM-EXTREME 将经典 SPARSEMEM
 
 \begin{figure}[H]
 \centering
-\includesvg[width=500pt]{images/SPARSEMEM-EXTREME.drawio.svg}
+\includesvg[width=450pt]{images/SPARSEMEM-EXTREME.drawio.svg}
 \caption{SPARSEMEM-EXTREME 内存模型}
 \end{figure}
 
@@ -614,7 +615,7 @@ SPARSEMEM-VMEMMAP 拓展的思路是：在 SPARSEMEM 中，\texttt{struct\ page}
 内存模型可以如同平坦内存模型一样快速进行页帧编号和\texttt{struct\ page*}的切换，使得稀疏内存模型可以完全替代平坦内存模型和非连续内存模型。
 
 2021 年提交补丁\href{https://lwn.net/Articles/858333}{Remove
-DISCINTIGMEM memory model} 彻底移除了 DISCONFITMEM 内存模型，SPARSEMEM
+DISCINTIGMEM memory model} 彻底移除了 DISCONFITMEM 内存模型\upcite{RemoveDISCINTIGMEMmemorymodelLWNnet-2021-06-04}，SPARSEMEM
 内存模型成为 Linux 内核的默认内存模型。
 
 
@@ -645,7 +646,7 @@ CPU 的 NUMA
 架构中只有低 32MB 的物理内存能够用于 DMA，因此用于 DMA
 的内存必须从该\texttt{zone}分配；在内存热插拔场景下，内核的代码数据要放在不会被下线（拔出）的内存区域中，而某些用户数据可以放在可能被下线的内存区域中，因此还应该将可能下线的内存区域划分为一个\texttt{zone}。本论文的实现基于
 RISCV 架构，并且运行在 qemu 模拟器中，通过 virtio 协议操作外设，DMA
-不对物理地址做限制，但仍然区分了常规内存分配请求和用于 DMA
+不对物理地址做限制\upcite{russell2008virtio}，但仍然区分了常规内存分配请求和用于 DMA
 的内存分配请求，将节点的内存划分为\texttt{ZONE\_DMA}和\texttt{ZONE\_NORMAL}区域，也许网络协议栈和驱动程序会有这方面的需求。
 
 尽管目前不支持对称多处理器，无法完整地支持硬件 NUMA
@@ -658,7 +659,7 @@ NUMA 配置探测，初始化多个节点即可。
 
 \chapter{页分配器}
 
-页分配器（page allocator）指按页管理系统内存的分配与释放的内存分配器，是操作系统最基础的组件。本论文的页分配器使用的主要算法是伙伴系统（Binary Buddy Allocator），该算法由 Knowlton 在论文{\cite{knowlton1965fast}} 提出并由 Knuth 在 {\cite{knuth1968art}} 进一步描述。与其他内存分配算法相比，伙伴系统有以下优点：
+页分配器（page allocator）指按页管理系统内存的分配与释放的内存分配器，是操作系统最基础的组件。本论文的页分配器使用的主要算法是伙伴系统（Binary Buddy Allocator），该算法由 Knowlton \upcite{knowlton1965fast} 提出并由 Knuth \upcite{knuth1968art} 进一步描述。与其他内存分配算法相比，伙伴系统有以下优点：
 
 \begin{itemize}
 \item
@@ -669,12 +670,7 @@ NUMA 配置探测，初始化多个节点即可。
   在理想负载下没有内碎片：伙伴系统将内存划分为一系列大小相等的块，并且仅能分配\(2^N\)页，对于\(2^N\)页的内存分配请求不存在内存碎片的问题。
 \end{itemize}
 
-伙伴系统是一种将普通的二次幂分配器与空闲缓冲区合并
-相结合的分配方案，其背后的基本概念非常简单。
-内存被划分成内存块，每个内存块由\(2^N\)个连续的物理页组成，其中\texttt{N}
-称为该内存块的阶数（order）。分配时如果没有所需大小的内存块，则将一个更大的内存块平分成两半，平分出来的内存块彼此互为伙伴.其中一半用于分配，另一半空闲。内存块会根据需要连续平分，直到平分出所需大小的内存块。稍后释放一个内存块时，将检查它的伙伴的分配状态，如果它是空闲的，则将两者合并。合并得到新的空闲内存块后，再去检测它的伙伴，继续上述合并过程，直到无法合并。
-
-伙伴系统有多种实现方式，主要有基于二叉树的实现和分离存储的实现。基于二叉树的实现通过一个数组形式的完全二叉树管理内存，二叉树的节点标记相应内存块的使用状态，高层节点对应阶数大的块，低层节点对应阶数小的块，在分配和释放中通过这些节点的标记属性来进行块的分离合并。基于二叉树的实现见图\ref{figure:buddy-system-binary-tree-implementation}。
+伙伴系统有多种实现方式，主要有基于二叉树的实现和分离存储的实现。基于二叉树的实现通过一个数组形式的完全二叉树管理内存，二叉树的节点标记相应内存块的使用状态，高层节点对应阶数大的块，低层节点对应阶数小的块，在分配和释放中通过这些节点的标记属性来进行块的分离合并。基于二叉树的实现如图\ref{figure:buddy-system-binary-tree-implementation}所示。
 
 \begin{figure}[H]
 \centering
@@ -704,7 +700,7 @@ NUMA 配置探测，初始化多个节点即可。
 
 系统要为每个物理页保留一个\texttt{struct\ page}结构体，因此\texttt{struct\ page}的大小必须要足够小，以便保留足够多的可用内存。\texttt{struct\ page}是整个系统中最为复杂的结构体，其复杂性在于每个\texttt{struct\ page}的字段都是精心编码的，在不同的场景下有不同的含义。
 
-\texttt{flags}保存物理页状态，包括物理页是否是被保留的（不可用于分配）、是否用于 slab 分配器以及物理也是否空闲等。此外，\texttt{flags}的高 6 比特存储该页所属的\texttt{node} id 和\texttt{zone} id，因此\texttt{flags}只有 26 比特用于跟踪页面状态。\texttt{flags}结构见图\ref{fig:struct-page-flags}。
+\texttt{flags}保存物理页状态，包括物理页是否是被保留的（不可用于分配）、是否用于 slab 分配器以及物理也是否空闲等。此外，\texttt{flags}的高 6 比特存储该页所属的\texttt{node} id 和\texttt{zone} id，因此\texttt{flags}只有 26 比特用于跟踪页面状态。\texttt{flags}结构如图\ref{fig:struct-page-flags}所示。
 
 \begin{figure}[H]
 \centering
@@ -749,7 +745,7 @@ slab 分配器时，\texttt{lru}用于记录该页面所属的 slab 和 cache。
 
 \section{接口设计}
 
-伙伴系统提供的底层 API 见表\ref{table:slab-allocator-api}。
+伙伴系统提供的底层 API 如表\ref{table:slab-allocator-api}所示。
 
 \begin{longtable}[htb]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.7596}}
@@ -846,7 +842,7 @@ gfp\_t 标志
 系统通过\texttt{struct\ page}
 管理物理页，物理页的分配和释放都通过修改\texttt{struct\ page}
 结构体实现，因此页分配器的底层接口通过内存块首页的\texttt{struct\ page}指针来定位内存块。从用户视角看，用户期望分配内存返回该内存块的起始虚拟地址，释放时传递该地址给伙伴系统的内存释放
-API。因此，页分配器还在上述底层 API 的基础上，提供了用起始地址定位内存块的用户 API，其他子系统应该优先使用这些用户 API。用户 API 见表\ref{table:slab-allocator-user-api}。
+API。因此，页分配器还在上述底层 API 的基础上，提供了用起始地址定位内存块的用户 API，其他子系统应该优先使用这些用户 API。用户 API 如表\ref{table:slab-allocator-user-api}所示。
 
 \begin{longtable}[htb]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.6164}}
@@ -888,7 +884,7 @@ API。因此，页分配器还在上述底层 API 的基础上，提供了用起
 系统中所有的\texttt{zone}构成了一个回退列表（fallback list），回退列表的第一个元素是目标\texttt{zone}。从目标\texttt{zone}分配内存失败，则回退到下一个优先级更低的\texttt{zone}分配内存。尝试完整个回退列表的\texttt{zone}后仍然无法成功分配内存才算失败。例如，用户请求从\texttt{ZONE\_NORMAL}区分配
 8 页内存，页分配器会优先尝试本地\texttt{ZONE\_NORMAL}区，失败则尝试本地\texttt{ZONE\_DMA}区，仍然失败再去其他节点重复以上过程。
 
-每个\texttt{struct\ node}节点都有自己的回退列表，在系统启动过程初始化。节点有多个\texttt{zone}，因此节点有多个回退列表，定义见表\ref{table:node-zone-lists}。
+每个\texttt{struct\ node}节点都有自己的回退列表，在系统启动过程初始化。节点有多个\texttt{zone}，因此节点有多个回退列表，定义如表\ref{table:node-zone-lists}所示。
 
 \begin{longtable}[htb]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.1188}}
@@ -912,7 +908,7 @@ API。因此，页分配器还在上述底层 API 的基础上，提供了用起
 \texttt{struct\ node}节点为自己的所有\texttt{struct\ zone}都设置了对应的回退列表。 \\
 \end{longtable}
 
-回退列表\texttt{struct\ zone\_list}定义见表\ref{table:zone-list-definition}：
+回退列表\texttt{struct\ zone\_list}定义如表\ref{table:zone-list-definition}所示。
 
 \begin{longtable}[htb]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.0693}}
@@ -939,7 +935,12 @@ API。因此，页分配器还在上述底层 API 的基础上，提供了用起
 
 \section{页分配与释放}
 
-页分配算法流程见图\ref{figure:page-alloc-flowchart}。
+伙伴系统是一种将普通的二次幂分配器与空闲缓冲区合并
+相结合的分配方案，其背后的基本概念非常简单。
+内存被划分成内存块，每个内存块由\(2^N\)个连续的物理页组成，其中\texttt{N}
+称为该内存块的阶数（order）。分配时如果没有所需大小的内存块，则将一个更大的内存块平分成两半，平分出来的内存块彼此互为伙伴.其中一半用于分配，另一半空闲。内存块会根据需要连续平分，直到平分出所需大小的内存块。稍后释放一个内存块时，将检查它的伙伴的分配状态，如果它是空闲的，则将两者合并。合并得到新的空闲内存块后，再去检测它的伙伴，继续上述合并过程，直到无法合并。
+
+页分配算法流程如图\ref{figure:page-alloc-flowchart}所示。
 
 \begin{figure}[H]
 \centering
@@ -948,7 +949,7 @@ API。因此，页分配器还在上述底层 API 的基础上，提供了用起
 \label{figure:page-alloc-flowchart}
 \end{figure}
 
-释放内存块流程见图\ref{figure:page-deallocate-flowchart}。
+释放内存块流程如图\ref{figure:page-deallocate-flowchart}所示。
 
 \begin{figure}[H]
 \centering
@@ -973,7 +974,7 @@ API。因此，页分配器还在上述底层 API 的基础上，提供了用起
 
 页分配器通过避免非\(2^N\)页的内存分配来克服内碎片。系统将页分配器作为最底层的内存分配器，只服务\(2^N\)页的内存分配请求。非\(2^N\)页的内存分配请求由上层内存分配器服务，页分配器作为最底层的内存分配器为其提供内存。因为页分配器只服务大小为$2^N$页的请求，因此本系统的页分配器内碎片为 0。
 
-伙伴系统只适合分配\(2^N\)页大小的内存，因此包括 FreeBSD、Linux 和 jemalloc 在内的采用伙伴系统算法的内存分配器均只将其用于实现页分配器，然后在其上建立更复杂的内存分配器服务非\(2^N\)大小的内存分配请求。本系统在页分配器上实现 slab 分配器，用于满足非\(2^N\)页大小的内存分配需求。
+伙伴系统只适合分配\(2^N\)页大小的内存，因此包括 FreeBSD\upcite{dube1998comparison}、Linux 和 jemalloc\upcite{evans2006scalable} 在内的采用伙伴系统算法的内存分配器均只将其用于实现页分配器，然后在其上建立更复杂的内存分配器服务非\(2^N\)大小的内存分配请求。本系统在页分配器上实现 slab 分配器，用于满足非\(2^N\)页大小的内存分配需求。
 
 本章所有功能实现代码托管在 GitHub 仓库。
 
@@ -1012,7 +1013,7 @@ slab 分配器的对象缓存策略不仅对有状态内存（对象）有用，
 
 slab 分配器提供了以下四个接口：
 \newpage
-\begin{lstlisting}[language = c]
+\begin{lstlisting}[language = c, numbers=none]
 // 创建名为 name，对象大小为 size，对齐到 align，
 // 构造函数/析构函数分别为 ctor/dtor 的缓存。
 struct kmem_cache *
@@ -1032,7 +1033,7 @@ void kmem_cache_destroy(struct kmem_cache *cachep);
 
 \texttt{kem\_cache\_create()}创建 cache
 时，指定了对象的构造函数和析构函数。slab
-分配器在为该对象分配内存时调用对象的构造函数，在释放该对象的内存时调用对象的析构函数。对象的构造函数和析构函数原型相同，函数声明见表\ref{table:obj-ctor-dtor}。
+分配器在为该对象分配内存时调用对象的构造函数，在释放该对象的内存时调用对象的析构函数。对象的构造函数和析构函数原型相同，函数声明如表\ref{table:obj-ctor-dtor}所示。
 
 \begin{longtable}[htb]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.4151}}
@@ -1055,7 +1056,7 @@ void kmem_cache_destroy(struct kmem_cache *cachep);
 & 同上 \\
 \end{longtable}
 
-传递给构造函数和析构函数的\texttt{flags}见图\ref{table:ctor-dtor-flags}。
+传递给构造函数和析构函数的\texttt{flags}如图\ref{table:ctor-dtor-flags}所示。
 
 \begin{longtable}[htb]{@{}ll@{}}
 \caption{构造函数和析构函数接收的\texttt{flag}}\label{table:ctor-dtor-flags} \\
@@ -1071,7 +1072,7 @@ void kmem_cache_destroy(struct kmem_cache *cachep);
 以分配磁盘中文件的管理结构\texttt{struct\ inode}为例，展示典型的 slab
 分配器使用方式。
 
-\begin{lstlisting}[language = c]
+\begin{lstlisting}[language = c,numbers=none]
 #include <slab.h>
 
 struct inode;
@@ -1102,16 +1103,17 @@ kmem_cache_destroy(inode_cachep);
 
 \section{数据结构}
 
-slab 分配器的结构如下：
+slab 分配器的结构如图\ref{figure:kmem_cache-physical-structure}所示。
 
 \begin{figure}[H]
 \centering
-\includesvg[width=500pt]{images/kmem_cache-physical-structure.drawio.svg}
+\includesvg[width=450pt]{images/kmem_cache-physical-structure.drawio.svg}
 \caption{slab 分配器物理结构}
+\label{figure:kmem_cache-physical-structure}
 \end{figure}
 
 \texttt{struct\ kmem\_cache}描述一个
-cache，定义较为复杂，下文会在具体算法流程中详细介绍。\texttt{struct\ kmem\_cache}字段见表\ref{table:kmem_cache-definition}
+cache，定义较为复杂，下文会在具体算法流程中详细介绍。\texttt{struct\ kmem\_cache}字段如表\ref{table:kmem_cache-definition}所示。
 
 \begin{longtable}[htb]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.1197}}
@@ -1164,7 +1166,7 @@ slab 所处的链表 \\
 自身的链表节点 \\
 \end{longtable}
 
-\texttt{struct\ slabmsgt}字段见表\ref{table:struct-slab-definition}。
+\texttt{struct\ slabmsgt}字段如表\ref{table:struct-slab-definition}所示。
 
 \begin{longtable}[htb]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.1528}}
@@ -1193,7 +1195,7 @@ slab 所处的链表 \\
 
 \end{longtable}
 
-\texttt{struct\ objp\_cache}定义见表\ref{table:struct-objp-cache-definition}。
+\texttt{struct\ objp\_cache}定义如表\ref{table:struct-objp-cache-definition}所示。
 
 \begin{longtable}[htb]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.2031}}
@@ -1233,7 +1235,7 @@ buffer，由于部分空间用于存储 slabmgt，一个 slab 只能存储一个
 
 \begin{figure}[H]
 \centering
-\includesvg[width=500pt]{images/on-slab-and-off-slab.drawio.svg}
+\includesvg[width=450pt]{images/on-slab-and-off-slab.drawio.svg}
 \caption{slab 管理结构}
 \end{figure}
 
@@ -1241,26 +1243,28 @@ buffer，由于部分空间用于存储 slabmgt，一个 slab 只能存储一个
 bufctl（缓存区控制符），其类型为\texttt{bufctl\_t}，在本系统中是\texttt{uint16\_t}的别名。每个
 bufctl 均代表一个对象，空闲列表第 N 个 bufctl 对应缓存区中第 N 个对象。bufctl 的值是空闲列表中它的后继的下标，空闲列表末尾元素的值为\texttt{BUFCTL\_END}，用于标示空闲列表终止，空闲列表的表头是\texttt{struct\ slab}的\texttt{freelist}字段，它指向空闲列表第一个元素。
 
-空闲列表的结构如下图所示，虚线箭头表示 bufctl
+空闲列表的结构如图\ref{figure:freelist-management}所示，虚线箭头表示 bufctl
 和对象的对应关系，实线箭头表示空闲列表元素的链接关系。空白块表示该对象未分配，灰色块表示该对象已分配。
 
 \begin{figure}[htb]
 \centering
 \includegraphics[scale=0.8]{images/freelist-management.drawio.pdf}
 \caption{slab 分配器对象空闲列表}
+\label{figure:freelist-management}
 \end{figure}
 
 通常 slab buffer 存放 slabmgt 和对象后，还会剩下一段内存。slab 分配器把 slabmgt 和对象放在 slab buffer 的最后面，将剩下的这段内存放在 buffer 最前面，这段内存用于 slab 着色，在\ref{sec:hw-cache-efficiency}“硬件缓存利用率”详细介绍。
 
 和其他分配算法相同，分配释放对象最终体现为对空闲列表的操作。分配对象时从空闲列表摘取第一个 bufctl，释放对象时将对象对应的 bufctl 插入到空闲列表头部中。
 
-下图展示对象分配释放对空闲列表的修改。初始时，slab 空闲，空闲列表为 freelist-\textgreater0-\textgreater1-\textgreater2-\textgreater3；分配一个对象后空闲列表为
+图\ref{figure:alloc-obj-freelist-management}展示对象分配释放对空闲列表的修改。初始时，slab 空闲，空闲列表为 freelist-\textgreater0-\textgreater1-\textgreater2-\textgreater3；分配一个对象后空闲列表为
 freelist-\textgreater1-\textgreater2-\textgreater3；再次分配后空闲列表为 freelist-\textgreater2-\textgreater3；释放对象 0 后，空闲列表为 freelist-\textgreater0-\textgreater2-\textgreater3。
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=500pt]{images/alloc-obj-freelist-management.drawio.pdf}
+\includegraphics[width=450pt]{images/alloc-obj-freelist-management.drawio.pdf}
 \caption{slab 分配器对象空闲链表分配释放过程}
+\label{figure:alloc-obj-freelist-management}
 \end{figure}
 
 
@@ -1290,11 +1294,11 @@ freelist-\textgreater1-\textgreater2-\textgreater3；再次分配后空闲列表
   摘取\texttt{objp\_cache}末尾的对象指针并返回。
 \end{enumerate}
 
-对象分配流程图见图\ref{figure:slab-allocator-obj-alloc-flow-chart}。
+对象分配流程图如图\ref{figure:slab-allocator-obj-alloc-flow-chart}所示。
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=500pt]{images/alloc-obj-flow-chart.drawio-cropped.pdf}
+\includegraphics[width=490pt]{images/alloc-obj-flow-chart.drawio-cropped.pdf}
 \caption{slab 分配器对象分配流程图}
 \label{figure:slab-allocator-obj-alloc-flow-chart}
 \end{figure}
@@ -1320,7 +1324,7 @@ cache 中的每个 slab 都是相同的，对象大小、对象数量和 slab
 
 \section{调试功能}
 
-据论文\cite{bonwick1994slab}所述，SunOS 5.4 利用 slab 分配器实现了以下功能：
+SunOS 5.4 利用 slab 分配器实现了以下功能\upcite{bonwick1994slab}：
 
 \begin{itemize}
 \item
@@ -1347,7 +1351,7 @@ cache 中的每个 slab 都是相同的，对象大小、对象数量和 slab
   的立即检测。此外，SunOS 5.4 同步取消映射模式还可以用于 slab 对象，每个对象都被设置成页大小，以浪费物理内存为代价实现 slab 对象上的 use-after-free 立即检测。
 \end{itemize}
 
-本系统实现了基于红区检测实现 slab 对象缓冲区越界检测，基于对象标记实现 slab 对象上的 use-after-free 检测。在对象两侧分别设置 64 字节的 redzone，redzone 算在 slab 对象中。增加调试功能后，slab 对象的布局见图\ref{figure:slab-debug-layout}。
+本系统实现了基于红区检测实现 slab 对象缓冲区越界检测，基于对象标记实现 slab 对象上的 use-after-free 检测。在对象两侧分别设置 64 字节的 redzone，redzone 算在 slab 对象中。增加调试功能后，slab 对象的布局如图\ref{figure:slab-debug-layout}所示。
 
 \begin{figure}[H]
 \centering
@@ -1432,7 +1436,7 @@ slab
 \section{kmalloc}
 
 kmalloc 即 kernel malloc 的缩写，指内核态的\texttt{malloc(3)}函数。slab
-分配器的对象缓存策略对无状态内存也同样有效，因此\texttt{kmalloc()}只是
+分配器的对象缓存策略对无状态内存也同样有效\upcite{bonwick1994slab}，因此\texttt{kmalloc()}只是
 slab 分配器\texttt{kmem\_cache\_alloc()}的包装。
 
 本系统在系统启动时创建对象大小为 16B 到 32K 的 12
@@ -1477,7 +1481,7 @@ slab 可容纳 100 个对象的 cache，但却只分配了 2 个对象，剩下 
 slab
 分配器的设计与实现。
 
-本文描述的内存分配器虽然完整的实现了内存分配释放功能，但还存在一些缺陷。最主要的是没有实现内存回收（memory reclaim），当空闲内存紧张时，扫描系统内存并回收可回收的内存，如空闲的 slab、磁盘缓冲区等。
+本文描述的内存分配器虽然完整的实现了内存分配释放功能，但还存在一些缺陷。最主要的是没有实现内存回收（memory reclaim），当空闲内存紧张时，扫描系统内存并回收可回收的内存，如空闲的 slab、磁盘缓冲区等\upcite{bovet2005understanding}。
 
 尽管对于教学操作系统，本论文实现的物理内存管理模块已经足够丰富，但仍然可以畅想未来其他同学在其上添加以下功能：
 
@@ -1519,7 +1523,6 @@ slab
 %=======%
 \bibdatabase{bib/database}%bib文件名称 仅修改bib/ 后部分
 \printbib
-\nocite{*} %显示数据库中有的，但是正文没有引用的文献
 
 
 
