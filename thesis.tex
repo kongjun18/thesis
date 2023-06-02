@@ -43,67 +43,14 @@
 
 
 
-%==============================%
-% ↓ ↓ ↓ 诚信说明页 授权说明书
-%==============================%
-
-% 1. 可以调整签字的宽度，现在是40
-% 2. 去掉raisebox的相关注释(注意上下大括号对应)，可以改变-5那个数字调整签名和横线的上下位置
-
-% 你的签名，signature.pdf 改为你的签名文件名，
-\mysignature{
-    \raisebox{-5pt}{
-        \includegraphics[width=40pt]{images/my-signature.pdf}
-    }
-}
-% % 你手写的日期，signature.pdf 改为你的手写的日期文件名
-% \mytime{
-%     % \raisebox{-5pt}{
-%         \includegraphics[width=40pt]{images/my-time.pdf}
-%     % }
-% }
-% % 老师的手写签名，signature.pdf 改为老师的手写签名文件名
-% \supervisorsignature{
-%     % \raisebox{-5pt}{
-%         \includegraphics[width=40pt]{signature.pdf}
-%     % }
-% }
-% % 老师手写的时间，signature.pdf 改为老师的手写的日期文件名
-% \teachertime{
-%     % \raisebox{-5pSt}{
-%         \includegraphics[width=40pt]{signature.pdf}
-%     % }
-% }
-% % 老师手写的成绩
-% \recommendedgrade{
-%     % \raisebox{-5pt}{
-%         \includegraphics[width=40pt]{signature.pdf}
-%     % }
-% }
-
-\makestatement
-
-%==============================%
-% ↑ ↑ ↑ 诚信说明页 授权说明书
-%==============================%
-
-
-%=====%
-%论文（设计）成绩：注意2007的模板要求，成绩页在最后，2021要求成绩页在摘要前面
-%=====%
-
-% % 下面这些注释掉可以去掉成绩、评语什么的
-% \supervisorcomment{}
-
-
-% \committeecomment{}
-
-% \finalgrade{}
-% % 上面这些注释掉可以去掉成绩、评语什么的
-
-
 \frontmatter
 
+\clearpage
+\thispagestyle{empty}
+\begin{figure}
+ \centering
+ \includegraphics[scale=0.4]{images/诚信声明.pdf}
+\end{figure}
 
 %中文摘要
 \ZhAbstract{
@@ -572,7 +519,7 @@ NUMA 架构的真实布局。论文后续部分会详细介绍。
 内存。整个系统的内存管理结构被视作一个\texttt{mem\_section}数组\footnote{实际上是一个 NR\_SECTION\_ROOTS * SECTION\_PER\_ROOT 大小的二维数组，因为 SECTION\_PER\_ROOT 定义为 1，因此这里说是一维数组。}。
 
 SPARSEMEM 内存模型将 FLATMEM 模型中 \texttt{struct\ page}
-必须连续存在于整个物理地址孔俊，变成了 \texttt{struct\ mem\_section}
+必须连续存在于整个物理地址的要求，改成了 \texttt{struct\ mem\_section}
 必须连续存在。在内存空洞的场景下，只需要每 128 MB 的物理地址空间存在一个
 \texttt{struct\ mem\_section} 即可（不要求分配\texttt{struct\ page}结构），而无需为每 4 KB 的物理地址空间都分配一个\texttt{struct\ page}，降低了不必要的内存开销。而且，\texttt{mem\_section}有上线和下线两个状态，对应内存的插入与拔出，通过\texttt{struct\ mem\_section} 的动态初始化与销毁实现物理内存热插拔。
 
@@ -1541,9 +1488,14 @@ slab
 
 感谢我的女朋友孙金雨，她给我的生活增添了许多酸甜苦辣咸，感谢她陪我度过了找实习找工作的痛苦时光，在互联网寒冬中给我带来丝丝暖意。
 
-这是论文的结束，是五年大学生涯的终点，也是我职业生涯的起点，\texttt{Hello, World!}。
+这是论文的结束，是五年大学生涯的终点，也是我职业生涯的起点。Hello, World!
 
-\Grade %这一句才是成绩页，上面是填写
+\clearpage
+\thispagestyle{empty}
+\begin{figure}
+ \centering
+ \includegraphics[scale=0.4]{images/成绩页.pdf}
+\end{figure}
 
 \end{sloppypar}
 \end{document}
